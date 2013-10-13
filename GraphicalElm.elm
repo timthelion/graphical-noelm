@@ -1,7 +1,9 @@
 module GraphicalElm where
 import open List
 import Keyboard
+import Window
 import Graphics.Input
+
 import open Graph
 import open Coordinates
 
@@ -22,10 +24,7 @@ editMode =
   <| Keyboard.isDown 123
 
 sampleGraph =
- [{parents=[],name="arrows",value=defaultValue}
- ,{parents=["arrows"],name="loc",value=defaultValue}
- ,{parents=[],name="mouse",value=defaultValue}
- ,{parents=["loc","mouse"],name="main",value=defaultValue}
+ [{parents=[],name="main",value=defaultValue}
  ]
 
 type GraphEditorState =
@@ -79,7 +78,7 @@ graphEditorState =
 displayNode: Node -> EditMode -> Node -> Element
 displayNode selected em node =
  let nameText: Text
-     nameText = toText node.name
+     nameText = toText ('*'::node.name)
      coloredText: Text
      coloredText = Text.color green nameText
      selectedElm: Element
@@ -148,7 +147,17 @@ displayNode selected em node =
     | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> text
     | otherwise -> plainText node.name
 
-graphDisplay = (\ges em->flow down <| map (flow right) <| map (\level->map (displayNode ges.selectedNode em) level) <| reverse <|  levelizeGraph ges.graph) <~ (sampleOn ctrlArrows graphEditorState) ~ editMode
+graphDisplay =
+ (\ges em  width height ->
+   flow down
+    <| intersperse (collage width 2 [traced (solid grey) <| segment (-(toFloat width/2),0) (toFloat width/2,0)])
+    <| map (flow right)
+    <| map (\level->
+        intersperse (toText "|" |> Text.color grey |> text)
+        <| map (displayNode ges.selectedNode em) level)
+    <| reverse
+    <| levelizeGraph ges.graph)
+ <~ (sampleOn ctrlArrows graphEditorState) ~ editMode
 
 addNodeKeyPress = keepIf id False <| Keyboard.isDown 120
 
@@ -157,8 +166,8 @@ addNodeFields = Graphics.Input.fields Nothing
 addNodeField = (\_->addNodeFields.field (\fs->Just {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState)<~ addNodeKeyPress
 
 main =
- (\gd em ans-> flow down 
-  [gd
+ (\width height gd em ans-> flow down
+  [gd width height
   ,plainText <| "Current edit mode "++show em++". Press F12 to change. Press F9 to add a node."
   ,ans])
- <~ graphDisplay ~ editMode ~ addNodeField
+ <~ Window.width ~ Window.height ~ graphDisplay ~ editMode ~ addNodeField
