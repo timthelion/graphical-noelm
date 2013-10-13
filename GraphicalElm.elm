@@ -3,7 +3,12 @@ import open List
 import Keyboard
 
 type Graph = [Node]
-type Node = {parents:[String],name:String,value:String}
+data Language = ElmLang
+type Value = {code:String,language:Language}
+type Node = {parents:[String],name:String,value:Value}
+
+emptyNode = {parents=[],name="",value=defaultValue}
+defaultValue={code="",language=ElmLang}
 
 data Ord = Gt | Lt | Eq
 
@@ -56,10 +61,10 @@ levelizeGraph' ls ns =
    (levels,[]) -> levels
 
 sampleGraph =
- [{parents=[],name="arrows",value=""}
- ,{parents=["arrows"],name="loc",value=""}
- ,{parents=[],name="mouse",value=""}
- ,{parents=["loc","mouse"],name="main",value=""}
+ [{parents=[],name="arrows",value=defaultValue}
+ ,{parents=["arrows"],name="loc",value=defaultValue}
+ ,{parents=[],name="mouse",value=defaultValue}
+ ,{parents=["loc","mouse"],name="main",value=defaultValue}
  ]
 
 type GraphEditorState =
@@ -95,7 +100,7 @@ getNode coordToGet coords =
   ((coord,node)::coords') ->
    if | coordToGet==coord -> node
       | otherwise -> getNode coordToGet coords'
-  [] -> {parents=[],name="",value=""}
+  [] -> emptyNode
 
 graphEditorState =
  foldp
