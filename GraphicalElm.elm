@@ -74,7 +74,7 @@ graphEditorState =
     Nothing -> ges'
     Just event -> {ges'|graph<- addOrReplaceNode event ges'.graph}))
   defaultEditorState
-  <| (,) <~ ctrlArrows ~ merge graphEditorFields.events graphEditorButtons.events
+  <| (,) <~ ctrlArrows ~ merges [graphEditorFields.events,graphEditorButtons.events,sampleOn addNodeKeyPress addNodeFields.events]
 
 displayNode: Node -> EditMode -> Node -> Element
 displayNode selected em node =
@@ -150,7 +150,15 @@ displayNode selected em node =
 
 graphDisplay = (\ges em->flow down <| map (flow right) <| map (\level->map (displayNode ges.selectedNode em) level) <| reverse <|  levelizeGraph ges.graph) <~ (sampleOn ctrlArrows graphEditorState) ~ editMode
 
+addNodeKeyPress = keepIf id False <| Keyboard.isDown 120
+
+addNodeFields = Graphics.Input.fields Nothing
+
+addNodeField = (\_->addNodeFields.field (\fs->Just {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState)<~ addNodeKeyPress
+
 main =
- (\gd em-> flow down 
-  [gd,plainText <| "Current edit mode "++show em++". Press F12 to change."])
- <~ graphDisplay ~ editMode
+ (\gd em ans-> flow down 
+  [gd
+  ,plainText <| "Current edit mode "++show em++". Press F12 to change. Press F9 to add a node."
+  ,ans])
+ <~ graphDisplay ~ editMode ~ addNodeField

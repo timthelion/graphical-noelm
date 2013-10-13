@@ -68,8 +68,11 @@ levelizeGraph' ls ns =
 
 addOrReplaceNode: Node -> Graph -> Graph
 addOrReplaceNode node gnodes' =
- case gnodes' of
-  (gnode::gnodes) ->
-   if | gnode.name==node.name -> addOrReplaceNode node gnodes
-      | otherwise -> gnode :: addOrReplaceNode node gnodes
-  [] -> node :: []
+ if node.name == ""
+ then gnodes'
+ else
+  case gnodes' of
+   (gnode::gnodes) ->
+    if | gnode.name==node.name -> addOrReplaceNode node gnodes
+       | otherwise -> gnode :: addOrReplaceNode node gnodes
+   [] -> node :: []
