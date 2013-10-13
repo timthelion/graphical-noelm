@@ -1,5 +1,6 @@
 module GraphicalElm where
 import open List
+import Keyboard
 
 type Graph = [Node]
 type Node = {parents:[String],name:String,value:String}
@@ -61,4 +62,65 @@ sampleGraph =
  ,{parents=["loc","mouse"],name="main",value=""}
  ]
 
-main = flow down <| map (flow right) <| map (\level->map asText level) <| reverse <|  levelizeGraph sampleGraph
+type GraphEditorState =
+ {selectedNode: String
+ ,graph: Graph}
+
+type Coord = {x:Int,y:Int}
+
+coordinates: Graph -> [(Coord,Node)]
+coordinates graph = levelizeGraph graph |> reverse |> coordinates' 0 |> concat
+
+coordinates': Int -> [[Node]] -> [[(Coord,Node)]]
+coordinates' n nodes' =
+ case nodes' of
+  (nodes::nodess) -> (coordinates'' nodes 0 n)::coordinates' (n+1) nodess
+  [] -> []
+coordinates'': [Node] -> Int -> Int -> [(Coord,Node)]
+coordinates'' nodes' x y =
+ case nodes' of
+  (node::nodes) -> ({x=x,y=y},node)::coordinates'' nodes (x+1) y
+  [] -> []
+
+getCoord: String -> [(Coord,Node)] -> Coord
+getCoord name coords =
+ case coords of
+  ((coord,node)::coords') ->
+   if | name==node.name -> coord
+      | otherwise -> getCoord name coords'
+
+getNode: Coord -> [(Coord,Node)] -> Node
+getNode coordToGet coords =
+ case coords of
+  ((coord,node)::coords') ->
+   if | coordToGet==coord -> node
+      | otherwise -> getNode coordToGet coords'
+  [] -> {parents=[],name="",value=""}
+
+graphEditorState =
+ foldp
+  (\arrs ges->
+   let ourCoordinates = coordinates ges.graph in
+   if | arrs.x/=0|| arrs.y/=0 ->
+         let oldCoord=getCoord ges.selectedNode ourCoordinates
+             newCoord={x=max (arrs.x+oldCoord.x) 0,y=max (-arrs.y+oldCoord.y) 0} in
+         {ges|selectedNode<-
+           let newSelectedNode =(getNode newCoord ourCoordinates).name in
+           if | newSelectedNode == "" -> ges.selectedNode
+              | otherwise -> newSelectedNode}
+      | otherwise -> ges)
+  {selectedNode="arrows",graph=sampleGraph} <| keepWhen Keyboard.ctrl {x=0,y=0} <| Keyboard.arrows
+
+displayNode: String -> Node -> Element
+displayNode selected node =
+ let nameText: Text
+     nameText = toText node.name
+     coloredText: Text
+     coloredText = Text.color red nameText
+     selectedElm: Element
+     selectedElm = text coloredText
+ in
+ if | node.name==selected -> selectedElm
+    | otherwise -> plainText node.name
+
+main = {-asText <| coordinates  sampleGraph -} (\ges->flow down <| map (flow right) <| map (\level->map (displayNode ges.selectedNode) level) <| reverse <|  levelizeGraph ges.graph) <~ graphEditorState
