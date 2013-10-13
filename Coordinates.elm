@@ -24,6 +24,7 @@ getCoord name coords =
   ((coord,node)::coords') ->
    if | name==node.name -> coord
       | otherwise -> getCoord name coords'
+  [] -> {x=0,y=0}
 
 getNode: Coord -> [(Coord,Node)] -> Node
 getNode coordToGet coords =

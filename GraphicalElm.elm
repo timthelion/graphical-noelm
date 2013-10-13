@@ -29,7 +29,7 @@ sampleGraph =
  ]
 
 type GraphEditorState =
- {selectedNode: String
+ {selectedNode: Node
  ,graph: Graph}
 
 updateLocation: {x:Int,y:Int} -> GraphEditorState -> GraphEditorState
@@ -41,20 +41,20 @@ updateLocation arrs ges =
  if | moved ->
      let
       oldCoord =
-       getCoord ges.selectedNode ourCoordinates
+       getCoord ges.selectedNode.name ourCoordinates
       newCoord =
        {x = max ( arrs.x + oldCoord.x) 0
        ,y = max (-arrs.y + oldCoord.y) 0}
      in
       {ges|selectedNode<-
        let
-        newSelectedNode =(getNode newCoord ourCoordinates).name
+        newSelectedNode =getNode newCoord ourCoordinates
        in
-       if | newSelectedNode == "" -> ges.selectedNode
+       if | newSelectedNode.name == "" -> ges.selectedNode
           | otherwise -> newSelectedNode}
     | otherwise -> ges
 
-defaultEditorState = {selectedNode="arrows",graph=sampleGraph}
+defaultEditorState = {selectedNode=emptyNode,graph=sampleGraph}
 
 ctrlArrows =
  keepWhen
@@ -76,12 +76,12 @@ graphEditorState =
   defaultEditorState
   <| (,) <~ ctrlArrows ~ merge graphEditorFields.events graphEditorButtons.events
 
-displayNode: String -> EditMode -> Node -> Element
+displayNode: Node -> EditMode -> Node -> Element
 displayNode selected em node =
  let nameText: Text
      nameText = toText node.name
      coloredText: Text
-     coloredText = Text.color red nameText
+     coloredText = Text.color green nameText
      selectedElm: Element
      selectedElm = flow down [text coloredText,editField]
 
@@ -143,7 +143,9 @@ displayNode selected em node =
           (join "," node.parents)
           {emptyFieldState|string<-(join "," node.parents)}
  in
- if | node.name==selected -> selectedElm
+ if | node.name==selected.name -> selectedElm
+    | any (\np->node.name==np) selected.parents -> toText node.name |> Text.color red |> text
+    | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> text
     | otherwise -> plainText node.name
 
 graphDisplay = (\ges em->flow down <| map (flow right) <| map (\level->map (displayNode ges.selectedNode em) level) <| reverse <|  levelizeGraph ges.graph) <~ (sampleOn ctrlArrows graphEditorState) ~ editMode
