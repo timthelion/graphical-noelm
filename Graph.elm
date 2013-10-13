@@ -2,7 +2,7 @@ module Graph where
 import open List
 
 type Graph = [Node]
-data Language = ElmLang
+data Language = ElmLang | FooLang
 type Value = {code:String,language:Language}
 type Node = {parents:[String],name:String,value:Value}
 
@@ -39,10 +39,17 @@ sortGraph g = reverse <| sortGraph' [] <| naiveSortBy (\n1 n2-> if | length n1.p
 sortGraph' alreadySorted ns =
  case ns of
   (node::nodes) ->
-    let inAlreadySorted n = any (\asn->asn.name==n) alreadySorted
+    let
+     inAlreadySorted n = any (\asn->asn.name==n) alreadySorted
     in
-    if | any inAlreadySorted node.parents || node.parents==[] -> sortGraph' (node::alreadySorted) nodes
-       | otherwise -> sortGraph' alreadySorted <| nodes ++(node::[])
+    if | all inAlreadySorted node.parents || node.parents==[] -> sortGraph' (node::alreadySorted) nodes
+       | otherwise ->
+          let
+           inRemainder n = any (\asn->asn.name==n) nodes
+           parentsInRemainder = any inRemainder node.parents
+          in
+          if | parentsInRemainder -> sortGraph' alreadySorted <| nodes ++(node::[])
+             | otherwise -> sortGraph' (node::alreadySorted) nodes -- stop trying to sort the node if one of it's parents does not exist.
   [] -> alreadySorted
 
 levelizeGraph: Graph -> [[Node]]
@@ -58,3 +65,11 @@ levelizeGraph' ls ns =
        | otherwise -> levelizeGraph' ((node::thisLevel)::higherLevels) nodes
    ([],(node::nodes)) ->  levelizeGraph' [[node]] nodes
    (levels,[]) -> levels
+
+addOrReplaceNode: Node -> Graph -> Graph
+addOrReplaceNode node gnodes' =
+ case gnodes' of
+  (gnode::gnodes) ->
+   if | gnode.name==node.name -> addOrReplaceNode node gnodes
+      | otherwise -> gnode :: addOrReplaceNode node gnodes
+  [] -> node :: []
