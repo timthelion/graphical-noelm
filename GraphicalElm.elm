@@ -241,7 +241,7 @@ main =
  (\width gd em anf ges lsf ef -> flow down
   [gd
   ,horizontalLine width
-  ,flow right [plainText <| "Edit mode:"++show em,ef,plainText "Press F12 to change modes."]
+  ,flow right [plainText <| "Edit mode:"++show em++"Press F12 to change modes.",ef,plainText "Press enter to apply changes."]
   ,flow right [anf,plainText "Press F9 to add node."]
   ,horizontalLine width
   ,plainText "In order to load a saved graph; paste generated code here and press F2 to load."
