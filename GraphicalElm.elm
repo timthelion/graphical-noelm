@@ -87,9 +87,6 @@ data GraphEditorEvent
  | Rename {oldName: String, newName: String}
  | Arrows {x:Int,y:Int}
 
-resortGraph: GraphEditorState -> GraphEditorState
-resortGraph
-
 graphEditorState =
  dropRepeats
  <| foldp
