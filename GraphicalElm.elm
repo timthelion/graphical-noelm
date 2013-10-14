@@ -3,9 +3,11 @@ import open List
 import Keyboard
 import Window
 import Graphics.Input
+import Either
 
 import open Graph
 import open Coordinates
+import open CodeGenerator
 
 data EditMode = Code | Language | Name | Parents | Delete
 
@@ -30,6 +32,7 @@ sampleGraph =
 
 type GraphEditorState =
  {selectedNode: Node
+ ,errors: String
  ,graph: Graph}
 
 updateLocation: {x:Int,y:Int} -> GraphEditorState -> GraphEditorState
@@ -54,7 +57,7 @@ updateLocation arrs ges =
           | otherwise -> newSelectedNode}
     | otherwise -> ges
 
-defaultEditorState = {selectedNode=emptyNode,graph=sampleGraph}
+defaultEditorState = {selectedNode=emptyNode,errors="",graph=sampleGraph}
 
 ctrlArrows =
  (\arrs->Arrows arrs)
@@ -70,6 +73,8 @@ graphEditorButtons = Graphics.Input.buttons NoEvent
 data GraphEditorEvent
  = NoEvent
  | Replace Node
+ | OpenGraph Graph
+ | ParseError String
  | Add Node
  | DeleteEvent Node
  | Rename {oldName: String, newName: String}
@@ -85,9 +90,11 @@ graphEditorState =
     Add node      -> {ges|graph <- addNode node ges.graph}
     DeleteEvent node   -> {ges|graph <- deleteNode node.name ges.graph}
     Rename rename -> {ges|graph <- renameNode rename.oldName rename.newName ges.graph}
+    OpenGraph graph -> {defaultEditorState|graph<-graph}
+    ParseError err -> {ges|errors<-err}
     )
   defaultEditorState
-  <| merges [sampleOn (Keyboard.isDown 13) graphEditorFields.events,graphEditorButtons.events,sampleOn addNodeKeyPress addNodeFields.events,ctrlArrows]
+  <| merges [sampleOn (Keyboard.isDown 13) graphEditorFields.events,graphEditorButtons.events,sampleOn addNodeKeyPress addNodeFields.events,sampleOn loadSavedKeyPress loadSavedFields.events,ctrlArrows]
 
 displayNode: Node -> EditMode -> Node -> Element
 displayNode selected em node =
@@ -165,10 +172,17 @@ displayNode selected em node =
     | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> text
     | otherwise -> plainText node.name
 
+horizontalLine width =
+ collage width 2
+  [  traced (solid grey)
+  <| segment
+      (-(toFloat width/2),0)
+      (toFloat width/2,0)]
+
 graphDisplay =
  (\ges em  width height ->
    flow down
-    <| intersperse (collage width 2 [traced (solid grey) <| segment (-(toFloat width/2),0) (toFloat width/2,0)])
+    <| intersperse (horizontalLine width)
     <| map (flow right)
     <| map (\level->
         intersperse (toText "|" |> Text.color grey |> text)
@@ -177,15 +191,46 @@ graphDisplay =
     <| levelizeGraph ges.graph)
  <~ graphEditorState ~ editMode
 
+{- add Node -}
+
 addNodeKeyPress = keepIf id False <| Keyboard.isDown 120
 
 addNodeFields = Graphics.Input.fields NoEvent
 
 addNodeField = (\_->addNodeFields.field (\fs->Add {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState) <~ addNodeKeyPress
 
+{- load saved -}
+
+loadSavedKeyPress = keepIf id False <| Keyboard.isDown 113
+
+loadSavedFields = Graphics.Input.fields NoEvent
+
+loadSavedField =
+ (\_->
+  loadSavedFields.field
+  (\fs->
+    let
+     parsedM = parseSavedGraph fs.string
+    in
+    case parsedM of
+     Either.Right graph -> OpenGraph graph
+     Either.Left err -> ParseError err
+     )
+  "Paste code to load here"
+  Graphics.Input.emptyFieldState) <~ loadSavedKeyPress
+
 main =
- (\width height gd em ans -> flow down
+ (\width height gd em anf ges lsf -> flow down
   [gd width height
-  ,plainText <| "Current edit mode "++show em++". Press F12 to change. Press F9 to add a node."
-  ,ans])
- <~ Window.width ~ Window.height ~ graphDisplay ~ editMode ~ addNodeField
+  ,horizontalLine width
+  ,plainText <| "Edit mode:"++show em++"        Press F12 to change."
+  ,flow right [anf,plainText "Press F9 to add node."]
+  ,horizontalLine width
+  ,plainText "In order to load a saved graph; paste generated code here and press F2 to load."
+  ,lsf
+  ,toText ges.errors |> Text.color red |> text
+  ,horizontalLine width
+  ,horizontalLine width
+  ,horizontalLine width
+  ,plainText <| generateCode ges.graph])
+ <~ Window.width ~ Window.height ~ graphDisplay ~ editMode ~ addNodeField ~ graphEditorState ~ loadSavedField
