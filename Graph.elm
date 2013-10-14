@@ -66,13 +66,41 @@ levelizeGraph' ls ns =
    ([],(node::nodes)) ->  levelizeGraph' [[node]] nodes
    (levels,[]) -> levels
 
-addOrReplaceNode: Node -> Graph -> Graph
-addOrReplaceNode node gnodes' =
+replaceNode: Node -> Graph -> Graph
+replaceNode node gnodes' =
  if node.name == ""
  then gnodes'
  else
   case gnodes' of
    (gnode::gnodes) ->
-    if | gnode.name==node.name -> addOrReplaceNode node gnodes
-       | otherwise -> gnode :: addOrReplaceNode node gnodes
-   [] -> node :: []
+    if | gnode.name==node.name -> node :: replaceNode node gnodes
+       | otherwise -> gnode :: replaceNode node gnodes
+   [] -> []
+
+addNode: Node -> Graph -> Graph
+addNode node gnodes =
+ if node.name == ""
+  then gnodes
+  else node::gnodes
+
+renameNode: String -> String -> Graph -> Graph
+renameNode oldName newName gnodes =
+ let
+  rename: String -> String
+  rename name = 
+   if | name==oldName -> newName
+      | otherwise -> name
+  renameNode' node = {node|name<-rename node.name}
+  renameParents node =
+   {node|parents<-map rename node.parents}
+ in
+ map renameNode' gnodes |>
+ map renameParents
+
+deleteNode: String -> Graph -> Graph
+deleteNode nodeToDelete gnodes' =
+ case gnodes' of
+  (gnode::gnodes) ->
+   if | gnode.name==nodeToDelete -> gnodes
+      | otherwise -> gnode:: deleteNode nodeToDelete gnodes
+  [] -> []

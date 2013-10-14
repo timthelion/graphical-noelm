@@ -7,7 +7,7 @@ import Graphics.Input
 import open Graph
 import open Coordinates
 
-data EditMode = Code | Language | Name | Parents
+data EditMode = Code | Language | Name | Parents | Delete
 
 editMode =
  foldp
@@ -18,7 +18,8 @@ editMode =
       Code -> Language
       Language -> Name
       Name -> Parents
-      Parents -> Code
+      Parents -> Delete
+      Delete -> Code
     else oldMode)
   Code
   <| Keyboard.isDown 123
@@ -56,24 +57,37 @@ updateLocation arrs ges =
 defaultEditorState = {selectedNode=emptyNode,graph=sampleGraph}
 
 ctrlArrows =
- keepWhen
-  Keyboard.ctrl
-  {x=0,y=0}
-  Keyboard.arrows
+ (\arrs->Arrows arrs)
+ <~
+  keepWhen
+   Keyboard.ctrl
+   {x=0,y=0}
+   Keyboard.arrows
 
-graphEditorFields = Graphics.Input.fields Nothing
-graphEditorButtons = Graphics.Input.buttons Nothing
+graphEditorFields = Graphics.Input.fields NoEvent
+graphEditorButtons = Graphics.Input.buttons NoEvent
+
+data GraphEditorEvent
+ = NoEvent
+ | Replace Node
+ | Add Node
+ | DeleteEvent Node
+ | Rename {oldName: String, newName: String}
+ | Arrows {x:Int,y:Int}
 
 graphEditorState =
  foldp
-  (\(arrs,fieldEventM) ges ->
-   updateLocation arrs ges |>
-   (\ges'->
+  (\fieldEventM ges ->
    case fieldEventM of
-    Nothing -> ges'
-    Just event -> {ges'|graph<- addOrReplaceNode event ges'.graph}))
+    NoEvent       -> ges
+    Arrows arrs   -> updateLocation arrs ges
+    Replace node  -> {ges|graph <- replaceNode node ges.graph}
+    Add node      -> {ges|graph <- addNode node ges.graph}
+    DeleteEvent node   -> {ges|graph <- deleteNode node.name ges.graph}
+    Rename rename -> {ges|graph <- renameNode rename.oldName rename.newName ges.graph}
+    )
   defaultEditorState
-  <| (,) <~ ctrlArrows ~ merges [graphEditorFields.events,graphEditorButtons.events,sampleOn addNodeKeyPress addNodeFields.events]
+  <| merges [sampleOn (Keyboard.isDown 13) graphEditorFields.events,graphEditorButtons.events,sampleOn addNodeKeyPress addNodeFields.events,ctrlArrows]
 
 displayNode: Node -> EditMode -> Node -> Element
 displayNode selected em node =
@@ -97,7 +111,7 @@ displayNode selected em node =
           let
            value = node.value
           in
-          Just {node|value<-{value|code<-fs.string}}
+          Replace {node|value<-{value|code<-fs.string}}
         in
          graphEditorFields.field
           makeEvent
@@ -109,7 +123,7 @@ displayNode selected em node =
           let
            value = node.value
           in
-          Just {node|value<-{value|language<-lang}}
+          Replace {node|value<-{value|language<-lang}}
         in
          flow right <| asText node.value.language ::
           map
@@ -118,22 +132,22 @@ displayNode selected em node =
             (makeEvent lang)
             (show lang))
           [ElmLang,FooLang]
-       Name -> plainText "TODO name"
-        {-let
+       Name ->
+        let
          makeEvent fs =
-          Just {node|name<-fs.string}
+          Rename {oldName=node.name,newName=fs.string}
         in
          graphEditorFields.field
           makeEvent
           node.name
-          {emptyFieldState|string<-node.name}-}
+          {emptyFieldState|string<-node.name}
        Parents ->
         let
          makeEvent fs =
           let
            newParents=split "," fs.string
           in
-          Just {node|parents<-
+          Replace {node|parents<-
                       if | fs.string=="" -> []
                          | otherwise -> newParents}
         in
@@ -141,6 +155,10 @@ displayNode selected em node =
           makeEvent
           (join "," node.parents)
           {emptyFieldState|string<-(join "," node.parents)}
+       Delete ->
+        graphEditorButtons.button
+         (DeleteEvent node)
+         "Delete"
  in
  if | node.name==selected.name -> selectedElm
     | any (\np->node.name==np) selected.parents -> toText node.name |> Text.color red |> text
@@ -157,16 +175,16 @@ graphDisplay =
         <| map (displayNode ges.selectedNode em) level)
     <| reverse
     <| levelizeGraph ges.graph)
- <~ (sampleOn ctrlArrows graphEditorState) ~ editMode
+ <~ graphEditorState ~ editMode
 
 addNodeKeyPress = keepIf id False <| Keyboard.isDown 120
 
-addNodeFields = Graphics.Input.fields Nothing
+addNodeFields = Graphics.Input.fields NoEvent
 
-addNodeField = (\_->addNodeFields.field (\fs->Just {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState)<~ addNodeKeyPress
+addNodeField = (\_->addNodeFields.field (\fs->Add {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState) <~ addNodeKeyPress
 
 main =
- (\width height gd em ans-> flow down
+ (\width height gd em ans -> flow down
   [gd width height
   ,plainText <| "Current edit mode "++show em++". Press F12 to change. Press F9 to add a node."
   ,ans])
