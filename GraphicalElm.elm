@@ -10,7 +10,7 @@ import open Graph
 import open Coordinates
 import open CodeGenerator
 
-data EditMode = Code | Language | Name | Parents | Delete | Explore
+data EditMode = Code | Language | Name | Parents | Delete | Explore | SaveCompile
 
 editMode =
  dropRepeats
@@ -24,7 +24,8 @@ editMode =
       Name -> Parents
       Parents -> Delete
       Delete -> Explore
-      Explore -> Code
+      Explore -> SaveCompile
+      SaveCompile -> Code
     else oldMode)
   Explore
   <| Keyboard.isDown 123
@@ -171,6 +172,7 @@ editField em node =
     (DeleteEvent node)
     "Delete"
   Explore -> plainText ""
+  SaveCompile -> plainText ""
 
 editFieldS: Signal Element
 editFieldS = (\em ges->editField em ges.selectedNode) <~ editMode ~ graphEditorState
@@ -179,16 +181,16 @@ displayNode: Node -> Node -> Element
 displayNode selected node =
  if | node.name==selected.name ->
         let nameText: Text
-            nameText = toText (String.cons '*' node.name)
+            nameText = monospace <| toText (String.cons '*' node.name)
             coloredText: Text
             coloredText = Text.color green nameText
             selectedElm: Element
             selectedElm = text coloredText
         in
         selectedElm
-    | any (\np->node.name==np) selected.parents -> toText node.name |> Text.color red |> text
-    | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> text
-    | otherwise -> plainText node.name
+    | any (\np->node.name==np) selected.parents -> toText node.name |> Text.color red |> monospace |> text
+    | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> monospace |> text
+    | otherwise -> text <|monospace <| toText node.name
 
 horizontalLine width =
  collage width 2
@@ -250,5 +252,7 @@ main =
   ,horizontalLine width
   ,horizontalLine width
   ,horizontalLine width
-  ,plainText <| generateCode ges.graph])
+  ,case em of
+    SaveCompile -> plainText <| generateCode ges.graph
+    _ -> plainText ""])
  <~ Window.width ~ graphDisplay ~ editMode ~ addNodeField ~ graphEditorState ~ loadSavedField ~ editFieldS
