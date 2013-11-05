@@ -28,7 +28,7 @@ editMode =
       SaveCompile -> Code
     else oldMode)
   Explore
-  <| Keyboard.isDown 123
+  <| Keyboard.isDown 115
 
 sampleGraph =
  [{parents=[],name="main",value=defaultValue}
@@ -242,7 +242,7 @@ main =
  (\width gd em anf ges lsf ef -> flow down
   [gd
   ,horizontalLine width
-  ,flow right [plainText <| "Edit mode:"++show em++"Press F12 to change modes.",ef,plainText "Press enter to apply changes."]
+  ,flow right [plainText <| "Edit mode:"++show em++"Press F4 to change modes.",ef,plainText "Press enter to apply changes."]
   ,flow right [anf,plainText "Press F9 to add node."]
   ,horizontalLine width
   ,plainText "In order to load a saved graph; paste generated code here and press F2 to load."
