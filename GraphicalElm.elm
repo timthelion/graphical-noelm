@@ -50,8 +50,8 @@ updateLocation arrs ges =
       oldCoord =
        getCoord ges.selectedNode.name ourCoordinates
       newCoord =
-       {x = max ( arrs.x + oldCoord.x) 0
-       ,y = max (-arrs.y + oldCoord.y) 0}
+       {x = max ( arrs.x + oldCoord.x ) 0
+       ,y = max ( arrs.y + oldCoord.y ) 0}
      in
       {ges|selectedNode<-
        let
@@ -207,7 +207,6 @@ graphDisplay =
     <| map (\level->
         intersperse (toText "|" |> Text.color grey |> text)
         <| map (displayNode ges.selectedNode) level)
-    <| reverse
     <| levelizeGraph ges.graph)
  <~ graphEditorState ~ Window.width
 

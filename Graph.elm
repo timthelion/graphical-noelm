@@ -53,18 +53,39 @@ sortGraph' alreadySorted ns =
   [] -> alreadySorted
 
 levelizeGraph: Graph -> [[Node]]
-levelizeGraph g = levelizeGraph' [] <| sortGraph g
-levelizeGraph': [[Node]] -> Graph -> [[Node]]
-levelizeGraph' ls ns =
- case (ls,ns) of
-   ((thisLevel::higherLevels),(node::nodes))->
-    let
-     hasParentInThisLevel = any (\pp-> any (\p->p==pp.name) node.parents) thisLevel
-    in
-    if | hasParentInThisLevel -> levelizeGraph' ([node]::thisLevel::higherLevels) nodes
-       | otherwise -> levelizeGraph' ((node::thisLevel)::higherLevels) nodes
-   ([],(node::nodes)) ->  levelizeGraph' [[node]] nodes
-   (levels,[]) -> levels
+levelizeGraph g =
+  foldr
+   (\node acc->
+     case node.parents of
+      [] -> addToTop ({node|value<-{defaultValue|code<-show node.parents }}) acc
+      (_::_) -> flipThroughAndAdd parentsSatisfied node node.parents acc)
+   []
+   <| reverse <| sortGraph g
+
+addToTop: Node -> [[Node]] -> [[Node]]
+addToTop node nodes =
+ case nodes of
+   [] -> [[node]] -- [[{node|value<- {defaultValue|code<-"atTop"}} ]]
+   (ns::nss) -> (node::ns)::nss -- ({node|value<-{defaultValue|code<-"atTop1"}}::ns)::nss
+
+flipThroughAndAdd: ([Node]->[acc]->[acc]) -> Node -> [acc] -> [[Node]] -> [[Node]]
+flipThroughAndAdd f toAdd acc ayss' =
+ case (ayss',acc) of
+  ((ays::ayss),[]) -> (toAdd::ays) :: ayss
+  ((ays::ayss),_)  -> ays :: flipThroughAndAdd f toAdd (f ays acc) ayss
+  ([],_) -> [[toAdd]]
+
+parentsSatisfied: [Node] -> [String] -> [String]
+parentsSatisfied nodesInLevel unsatisfiedDependencies =
+ let satisfies potentialDeps unsatisfiedDep =
+       if | elem unsatisfiedDep potentialDeps -> Nothing
+          | otherwise -> Just unsatisfiedDep
+     unsatisfiedDependencies' = justs <| map (\unsatisfiedDep ->satisfies (map .name nodesInLevel) unsatisfiedDep) unsatisfiedDependencies
+ in
+ unsatisfiedDependencies'
+
+elem: a -> [a] -> Bool
+elem a ays = any (\a1->a1==a) ays
 
 replaceNode: Node -> Graph -> Graph
 replaceNode node gnodes' =

@@ -46,9 +46,14 @@ parseSavedNode raw =
      if | languageString == "ElmLang" -> ElmLang
         | languageString == "FooLang" -> FooLang
     code = inQuotes "#####$#" "#$#####" raw'
-    parents =
+    parents' =
      case String.split "_parents_-}" raw' of
       (_::raw''::[]) -> String.split "~" raw''
+    parents =
+     case parents' of
+      (p::[]) -> if | p == "" -> []
+                    | otherwise -> parents'
+      _ -> parents'
    in Either.Right {name=name,parents=parents,value={code=code,language=language}}
   _ -> Either.Left <| "Parse error, cannot parse:" ++ raw
 
