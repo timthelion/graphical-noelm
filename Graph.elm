@@ -57,7 +57,7 @@ levelizeGraph g =
   foldr
    (\node acc->
      case node.parents of
-      [] -> addToTop ({node|value<-{defaultValue|code<-show node.parents }}) acc
+      [] -> addToTop (node) acc
       (_::_) -> flipThroughAndAdd parentsSatisfied node node.parents acc)
    []
    <| reverse <| sortGraph g
@@ -65,8 +65,8 @@ levelizeGraph g =
 addToTop: Node -> [[Node]] -> [[Node]]
 addToTop node nodes =
  case nodes of
-   [] -> [[node]] -- [[{node|value<- {defaultValue|code<-"atTop"}} ]]
-   (ns::nss) -> (node::ns)::nss -- ({node|value<-{defaultValue|code<-"atTop1"}}::ns)::nss
+   [] -> [[node]]
+   (ns::nss) -> (node::ns)::nss
 
 flipThroughAndAdd: ([Node]->[acc]->[acc]) -> Node -> [acc] -> [[Node]] -> [[Node]]
 flipThroughAndAdd f toAdd acc ayss' =
