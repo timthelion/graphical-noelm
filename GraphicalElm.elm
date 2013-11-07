@@ -52,14 +52,26 @@ updateLocation arrs ges =
       newCoord =
        {x = max ( arrs.x + oldCoord.x ) 0
        ,y = max ( arrs.y + oldCoord.y ) 0}
-     in
-      {ges|selectedNode<-
-       let
-        newSelectedNode =getNode newCoord ourCoordinates
-       in
-       if | newSelectedNode.name == "" -> ges.selectedNode
-          | otherwise -> newSelectedNode}
+     in setSelectedNode ges newCoord
     | otherwise -> ges
+
+restoreCoordinates: GraphEditorState -> (GraphEditorState -> GraphEditorState) -> GraphEditorState
+restoreCoordinates ges f =
+ let
+  ourCoordinates = coordinates ges.graph
+  oldCoord = getCoord ges.selectedNode.name ourCoordinates
+ in
+ setSelectedNode (f ges) oldCoord
+
+setSelectedNode: GraphEditorState -> {x:Int,y:Int} -> GraphEditorState
+setSelectedNode ges coord =
+ {ges|selectedNode<-
+  let
+   ourCoordinates = coordinates ges.graph
+   newSelectedNode = getNode coord ourCoordinates
+  in
+  if | newSelectedNode.name == "" -> ges.selectedNode
+     | otherwise -> newSelectedNode}
 
 defaultEditorState = {selectedNode=emptyNode,errors="",graph=sampleGraph}
 
@@ -93,14 +105,17 @@ graphEditorState =
  <| foldp
   (\fieldEventM ges ->
    case fieldEventM of
-    NoEvent       -> ges
-    Arrows arrs   -> updateLocation arrs ges
-    Replace node  -> {ges|graph <- replaceNode node ges.graph}
-    Add node      -> {ges|graph <- addNode node ges.graph}
-    DeleteEvent node   -> {ges|graph <- deleteNode node.name ges.graph}
-    Rename rename -> {ges|graph <- renameNode rename.oldName rename.newName ges.graph}
-    OpenGraph graph -> {defaultEditorState|graph<-graph}
-    ParseError err -> {ges|errors<-err}
+    NoEvent          -> ges
+
+    Arrows arrs      -> updateLocation arrs ges
+
+    Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- replaceNode node ges.graph})
+    Add node         -> restoreCoordinates ges (\ges->{ges|graph <- addNode node ges.graph})
+    DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- deleteNode node.name ges.graph})
+    Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- renameNode rename.oldName rename.newName ges.graph})
+
+    OpenGraph graph  -> {defaultEditorState|graph<-graph}
+    ParseError err   -> {ges|errors<-err}
     )
   defaultEditorState
   <| merges
