@@ -245,7 +245,7 @@ main =
   ,flow right [plainText <| "Edit mode:"++show em++"Press F4 to change modes.",ef,plainText "Press enter to apply changes."]
   ,flow right [anf,plainText "Press F9 to add node."]
   ,horizontalLine width
-  ,plainText "In order to load a saved graph; paste generated code here and press F2 to load."
+  ,plainText "In order to load a saved graph; paste generated code here and then press the Home key and F2 to load."
   ,lsf
   ,toText ges.errors |> Text.color red |> text
   ,horizontalLine width
