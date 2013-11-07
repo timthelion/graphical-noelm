@@ -1,6 +1,20 @@
+{-
+The Graph module provides the basic data types used by Graphical ELM.
+It also provides utility functionality useful for sorting, levelizing and editing a graph.
+
+INDEX:
+- data types
+- commands that operate on an entire graph
+- commands that operate on a single node
+
+copyright (c) 2013 Timothy Hobbs
+Released under the terms of the GNU AGPL v 3 or later.
+See more licence information at the end of the file, and or in the file COPYING.
+-}
 module Graph where
 import open List
 
+{- data types -}
 type Graph = [Node]
 data Language = ElmLang | Ikcilpazc
 type Value = {code:String,language:Language}
@@ -10,6 +24,8 @@ emptyNode = {parents=[],name="",value=defaultValue}
 defaultValue={code="",language=ElmLang}
 
 data Ord = Gt | Lt | Eq
+
+{- commands that operate on an entire graph -}
 
 naiveSortBy: (a -> a -> Ord) -> [a] -> [a]
 naiveSortBy comp al = naiveSortBy' comp al [] []
@@ -87,6 +103,8 @@ parentsSatisfied nodesInLevel unsatisfiedDependencies =
 elem: a -> [a] -> Bool
 elem a ays = any (\a1->a1==a) ays
 
+{- commands that operate on a single node -}
+
 replaceNode: Node -> Graph -> Graph
 replaceNode node gnodes' =
  if node.name == ""
@@ -125,3 +143,22 @@ deleteNode nodeToDelete gnodes' =
    if | gnode.name==nodeToDelete -> gnodes
       | otherwise -> gnode:: deleteNode nodeToDelete gnodes
   [] -> []
+{-
+Graphical ELM - A program for editing graphs as graphs.
+Visually, Architecturally
+
+    Copyright (C) 2013  Timothy Hobbs <timothyhobbs@seznam.cz> thobbs.cz
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-}
