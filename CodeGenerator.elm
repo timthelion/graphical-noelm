@@ -1,5 +1,6 @@
 module CodeGenerator where
 import open Graph
+import Ikcilpazc
 import String
 import List
 import Either
@@ -10,14 +11,24 @@ headerLength = String.length header
 
 generateCode: Graph -> String
 generateCode gnodes
- = header ++ "\n" ++
- (concat <| map generateNodeCode gnodes)
+ =
+ let
+  nodeCodesE = map generateNodeCode gnodes
+  errors = Either.lefts nodeCodesE
+  nodeCodes = Either.rights nodeCodesE
+ in
+ if | length errors == 0 ->
+      header ++ "\n" ++
+      (concat <| nodeCodes)
+    | otherwise -> concat <| errors
 
-generateNodeCode: Node -> String
+generateNodeCode: Node -> Either.Either String String
 generateNodeCode node =
- case node.value.language of
-   ElmLang -> node.name++"="++node.value.code++"{-_language_"++show node.value.language++"_base_code_#####$#"++node.value.code++"#$#####_parents_-}"++(concat <| intersperse "~" node.parents)++"{-*****-}\n"
-   _ -> "{- ERROR no generator availiable. -}"
+ case (case node.value.language of
+   ElmLang -> Either.Right (node.value.code)
+   Ikcilpazc -> Ikcilpazc.gen node) of
+  Either.Right code -> Either.Right <| node.name++"="++ code ++ "{-_language_"++show node.value.language++"_base_code_#####$#"++node.value.code++"#$#####_parents_-}"++(concat <| intersperse "~" node.parents)++"{-*****-}\n"
+  Either.Left err -> Either.Left err
 
 parseSavedGraph: String -> Either.Either String Graph
 parseSavedGraph content =
@@ -44,7 +55,7 @@ parseSavedNode raw =
     languageString = head <| String.split "_base_code_" raw'
     language =
      if | languageString == "ElmLang" -> ElmLang
-        | languageString == "FooLang" -> FooLang
+        | languageString == "Ikcilpazc" -> Ikcilpazc
     code = inQuotes "#####$#" "#$#####" raw'
     parents' =
      case String.split "_parents_-}" raw' of

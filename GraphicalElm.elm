@@ -143,7 +143,7 @@ editField em node =
       graphEditorButtons.button
        (makeEvent lang)
        (show lang))
-     [ElmLang,FooLang]
+     [ElmLang,Ikcilpazc]
   Name ->
    let
     makeEvent fs =

@@ -2,7 +2,7 @@ module Graph where
 import open List
 
 type Graph = [Node]
-data Language = ElmLang | FooLang
+data Language = ElmLang | Ikcilpazc
 type Value = {code:String,language:Language}
 type Node = {parents:[String],name:String,value:Value}
 
