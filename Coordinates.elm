@@ -11,8 +11,8 @@ import open Graph
 
 type Coord = {x:Int,y:Int}
 
-coordinates: Graph -> [(Coord,Node)]
-coordinates graph = levelizeGraph graph |> reverse |> coordinates' 0 |> concat
+coordinates: [[Node]] -> [(Coord,Node)]
+coordinates levelizedGraph = coordinates' 0 levelizedGraph |> concat
 
 coordinates': Int -> [[Node]] -> [[(Coord,Node)]]
 coordinates' n nodes' =
@@ -40,6 +40,7 @@ getNode coordToGet coords =
    if | coordToGet==coord -> node
       | otherwise -> getNode coordToGet coords'
   [] -> emptyNode
+
 {-
 Graphical ELM - A program for editing graphs as graphs.
 Visually, Architecturally

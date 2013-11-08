@@ -49,7 +49,7 @@ editMode =
 
 ctrlArrows =
  dropRepeats
- <| (\arrs->Arrows arrs)
+ <| (\arrs->Arrows {arrs|y<- -arrs.y})
  <~
   keepWhen
    Keyboard.ctrl
@@ -82,13 +82,13 @@ graphEditorState =
 
     Arrows arrs      -> updateLocation arrs ges
 
-    Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- replaceNode node ges.graph})
-    AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- addNode node ges.graph})
-    AddMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- ges.misc ++ [misc]}) 
-    DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- deleteNode node.name ges.graph})
-    Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- renameNode rename.oldName rename.newName ges.graph})
+    Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- replaceNode node ges.graph}) |> updateGraphLevelization
+    AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- addNode node ges.graph}) |> updateGraphLevelization
+    AddMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- ges.misc ++ [misc]})
+    DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- deleteNode node.name ges.graph}) |> updateGraphLevelization
+    Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- renameNode rename.oldName rename.newName ges.graph}) |> updateGraphLevelization
 
-    SetState ges  -> ges
+    SetState ges  -> ges |> updateGraphLevelization
     ParseError err   -> {ges|errors<-err}
     )
   defaultEditorState
@@ -199,7 +199,7 @@ graphDisplay =
     <| map (\level->
         intersperse verticalLine
         <| map (displayNode ges.selectedNode) level)
-    <| levelizeGraph ges.graph)
+    <| ges.levelizedGraph)
  <~ graphEditorState ~ Window.width
 
 {- add Nodes, Misc(in the future, groups, duplicates) -}
