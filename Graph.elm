@@ -17,11 +17,28 @@ import open List
 {- data types -}
 type Graph = [Node]
 data Language = ElmLang | Ikcilpazc
-type Value = {code:String,language:Language}
-type Node = {parents:[String],name:String,value:Value}
+type Value = 
+ {code: String
+ ,language: Language}
+type Node =
+ {parents: [String]
+ ,name: String
+ ,value: Value}
 
-emptyNode = {parents=[],name="",value=defaultValue}
-defaultValue={code="",language=ElmLang}
+
+sampleGraph =
+ [{parents=[]
+ ,name="main"
+ ,value=defaultValue}]
+
+emptyNode =
+ {parents = []
+ ,name    = ""
+ ,value   = defaultValue}
+
+defaultValue =
+ {code = ""
+ ,language = ElmLang}
 
 data Ord = Gt | Lt | Eq
 

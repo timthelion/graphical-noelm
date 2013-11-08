@@ -25,6 +25,7 @@ import String
 import open Graph
 import open Coordinates
 import open CodeGenerator
+import open GraphEditorState
 
 data EditMode = Code | Language | Name | Parents | Delete | Explore | SaveCompile
 
@@ -46,51 +47,6 @@ editMode =
   Explore
   <| Keyboard.isDown 115
 
-sampleGraph =
- [{parents=[],name="main",value=defaultValue}
- ]
-
-type GraphEditorState =
- {selectedNode: Node
- ,errors: String
- ,graph: Graph}
-
-updateLocation: {x:Int,y:Int} -> GraphEditorState -> GraphEditorState
-updateLocation arrs ges =
- let
-  ourCoordinates = coordinates ges.graph
-  moved = arrs.x/=0|| arrs.y/=0
- in
- if | moved ->
-     let
-      oldCoord =
-       getCoord ges.selectedNode.name ourCoordinates
-      newCoord =
-       {x = max ( arrs.x + oldCoord.x ) 0
-       ,y = max ( arrs.y + oldCoord.y ) 0}
-     in setSelectedNode ges newCoord
-    | otherwise -> ges
-
-restoreCoordinates: GraphEditorState -> (GraphEditorState -> GraphEditorState) -> GraphEditorState
-restoreCoordinates ges f =
- let
-  ourCoordinates = coordinates ges.graph
-  oldCoord = getCoord ges.selectedNode.name ourCoordinates
- in
- setSelectedNode (f ges) oldCoord
-
-setSelectedNode: GraphEditorState -> {x:Int,y:Int} -> GraphEditorState
-setSelectedNode ges coord =
- {ges|selectedNode<-
-  let
-   ourCoordinates = coordinates ges.graph
-   newSelectedNode = getNode coord ourCoordinates
-  in
-  if | newSelectedNode.name == "" -> ges.selectedNode
-     | otherwise -> newSelectedNode}
-
-defaultEditorState = {selectedNode=emptyNode,errors="",graph=sampleGraph}
-
 ctrlArrows =
  dropRepeats
  <| (\arrs->Arrows arrs)
@@ -109,9 +65,10 @@ graphEditorButtons = Graphics.Input.buttons NoEvent
 data GraphEditorEvent
  = NoEvent
  | Replace Node
- | OpenGraph Graph
+ | SetState GraphEditorState
  | ParseError String
- | Add Node
+ | AddNode Node
+ | AddMisc String
  | DeleteEvent Node
  | Rename {oldName: String, newName: String}
  | Arrows {x:Int,y:Int}
@@ -126,21 +83,21 @@ graphEditorState =
     Arrows arrs      -> updateLocation arrs ges
 
     Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- replaceNode node ges.graph})
-    Add node         -> restoreCoordinates ges (\ges->{ges|graph <- addNode node ges.graph})
+    AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- addNode node ges.graph})
+    AddMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- ges.misc ++ [misc]}) 
     DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- deleteNode node.name ges.graph})
     Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- renameNode rename.oldName rename.newName ges.graph})
 
-    OpenGraph graph  -> {defaultEditorState|graph<-graph}
+    SetState ges  -> ges
     ParseError err   -> {ges|errors<-err}
     )
   defaultEditorState
   <| merges
    [sampleOn applyKeyPress graphEditorFields.events
    ,graphEditorButtons.events
-   ,sampleOn addNodeKeyPress addNodeFields.events
+   ,sampleOn addKeyPress addFields.events
    ,sampleOn loadSavedKeyPress loadSavedFields.events
    ,ctrlArrows]
-
 
 editField: EditMode -> Node -> Element
 editField em node =
@@ -245,13 +202,16 @@ graphDisplay =
     <| levelizeGraph ges.graph)
  <~ graphEditorState ~ Window.width
 
-{- add Node -}
+{- add Nodes, Misc(in the future, groups, duplicates) -}
 
-addNodeKeyPress = keepIf id False <| Keyboard.isDown 120
+addKeyPress = keepIf id False <| Keyboard.isDown 120
 
-addNodeFields = Graphics.Input.fields NoEvent
+addFields = Graphics.Input.fields NoEvent
 
-addNodeField = (\_->addNodeFields.field (\fs->Add {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState) <~ addNodeKeyPress
+addNodeFieldS = (\_->addFields.field (\fs->AddNode {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState) <~ addKeyPress
+
+addMiscFieldS = (\_->addFields.field (\fs->AddMisc fs.string) "Add misc(imports, type declarations, ect.)" Graphics.Input.emptyFieldState) <~ addKeyPress
+
 
 {- load saved -}
 
@@ -267,26 +227,26 @@ loadSavedField =
      parsedM = parseSavedGraph fs.string
     in
     case parsedM of
-     Either.Right graph -> OpenGraph graph
+     Either.Right ges -> SetState ges 
      Either.Left err -> ParseError err
      )
   "Paste code to load here"
   Graphics.Input.emptyFieldState) <~ loadSavedKeyPress
 
 main =
- (\width gd em anf ges lsf ef -> flow down
+ (\width gd em addNodeField addMiscField ges lsf editField -> flow down
   [gd
   ,coloredHorizontalLine width black
   ,horizontalLine width
   ,horizontalLine width
   ,flow right [plainText <| "Edit mode: "++show em,verticalLine,plainText <| "Press F4 to change modes."]
-  ,flow right [verticalLine,ef,plainText "Press enter to apply changes."]
+  ,flow right [editField,verticalLine,plainText "Press enter to apply changes."]
   ,coloredHorizontalLine width black
   ,horizontalLine width
   ,horizontalLine width
-  ,flow right [anf,verticalLine,plainText "Press F9 to add node."]
+  ,flow right [addNodeField,verticalLine,plainText "Press F9 to add node."]
   ,horizontalLine width
-  ,horizontalLine width
+  ,flow right [addMiscField,verticalLine,plainText "Press F9 to add misc."] 
   ,horizontalLine width
   ,horizontalLine width
   ,horizontalLine width
@@ -301,9 +261,9 @@ main =
   ,horizontalLine width
   ,horizontalLine width
   ,case em of
-    SaveCompile -> plainText <| generateCode ges.graph
+    SaveCompile -> plainText <| generateCode ges
     _ -> plainText ""])
- <~ Window.width ~ graphDisplay ~ editMode ~ addNodeField ~ graphEditorState ~ loadSavedField ~ editFieldS
+ <~ Window.width ~ graphDisplay ~ editMode ~ addNodeFieldS ~ addMiscFieldS ~ graphEditorState ~ loadSavedField ~ editFieldS
 {-
 Graphical ELM - A program for editing graphs as graphs.
 Visually, Architecturally
