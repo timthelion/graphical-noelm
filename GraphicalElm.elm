@@ -223,12 +223,16 @@ displayNode selected node =
     | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> monospace |> text
     | otherwise -> text <|monospace <| toText node.name
 
-horizontalLine width =
+horizontalLine width = coloredHorizontalLine width grey
+
+coloredHorizontalLine width c =
  collage width 2
-  [  traced (solid grey)
+  [  traced (solid c)
   <| segment
       (-(toFloat width/2),0)
       (toFloat width/2,0)]
+
+verticalLine = toText "|" |> Text.color grey |> text
 
 graphDisplay =
  (\ges width ->
@@ -236,7 +240,7 @@ graphDisplay =
     <| intersperse (horizontalLine width)
     <| map (flow right)
     <| map (\level->
-        intersperse (toText "|" |> Text.color grey |> text)
+        intersperse verticalLine
         <| map (displayNode ges.selectedNode) level)
     <| levelizeGraph ges.graph)
  <~ graphEditorState ~ Window.width
@@ -272,9 +276,19 @@ loadSavedField =
 main =
  (\width gd em anf ges lsf ef -> flow down
   [gd
+  ,coloredHorizontalLine width black
   ,horizontalLine width
-  ,flow right [plainText <| "Edit mode:"++show em++"Press F4 to change modes.",ef,plainText "Press enter to apply changes."]
-  ,flow right [anf,plainText "Press F9 to add node."]
+  ,horizontalLine width
+  ,flow right [plainText <| "Edit mode: "++show em,verticalLine,plainText <| "Press F4 to change modes."]
+  ,flow right [verticalLine,ef,plainText "Press enter to apply changes."]
+  ,coloredHorizontalLine width black
+  ,horizontalLine width
+  ,horizontalLine width
+  ,flow right [anf,verticalLine,plainText "Press F9 to add node."]
+  ,horizontalLine width
+  ,horizontalLine width
+  ,horizontalLine width
+  ,horizontalLine width
   ,horizontalLine width
   ,plainText "In order to load a saved graph; paste generated code here and then press the Home key and F2 to load."
   ,lsf
