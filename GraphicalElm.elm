@@ -49,8 +49,7 @@ editMode =
   <| Keyboard.isDown 115
 
 ctrlArrows =
- dropRepeats
- <| (\arrs->Arrows {arrs|y<- -arrs.y})
+ (\arrs->Arrows {arrs|y<- -arrs.y})
  <~
   keepWhen
    Keyboard.ctrl
