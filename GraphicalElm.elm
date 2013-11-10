@@ -27,7 +27,7 @@ import open Coordinates
 import open CodeGenerator
 import open GraphEditorState
 
-data EditMode = Code | Language | Name | Parents | Delete | Explore | SaveCompile
+data EditMode = Code | Language | Name | Parents | Delete | Explore | SaveCompile | CodeView
 
 editMode =
  dropRepeats
@@ -42,7 +42,8 @@ editMode =
       Parents -> Delete
       Delete -> Explore
       Explore -> SaveCompile
-      SaveCompile -> Code
+      SaveCompile -> CodeView
+      CodeView -> Code
     else oldMode)
   Explore
   <| Keyboard.isDown 115
@@ -160,25 +161,30 @@ editField em node =
     (DeleteEvent node)
     "Delete"
   Explore -> plainText ""
+  CodeView -> plainText ""
   SaveCompile -> plainText ""
 
 editFieldS: Signal Element
 editFieldS = (\em ges->editField em ges.selectedNode) <~ editMode ~ graphEditorState
 
-displayNode: Node -> Node -> Element
-displayNode selected node =
+displayNode: EditMode -> Node -> Node -> Element
+displayNode mode selected node =
+ let nodeString = case mode of
+       CodeView -> node.value.code
+       _ -> node.name
+ in
  if | node.name==selected.name ->
-        let nameText: Text
-            nameText = monospace <| toText (String.cons '*' node.name)
+        let nodeText: Text
+            nodeText = monospace <| toText (String.cons '*' nodeString)
             coloredText: Text
-            coloredText = Text.color green nameText
+            coloredText = Text.color green nodeText
             selectedElm: Element
             selectedElm = text coloredText
         in
         selectedElm
-    | any (\np->node.name==np) selected.parents -> toText node.name |> Text.color red |> monospace |> text
-    | any (\np->selected.name==np) node.parents ->  toText node.name |> Text.color blue |> monospace |> text
-    | otherwise -> text <|monospace <| toText node.name
+    | any (\np->node.name==np) selected.parents -> toText nodeString |> Text.color red |> monospace |> text
+    | any (\np->selected.name==np) node.parents ->  toText nodeString |> Text.color blue |> monospace |> text
+    | otherwise -> text <|monospace <| toText nodeString
 
 horizontalLine width = coloredHorizontalLine width grey
 
@@ -192,15 +198,15 @@ coloredHorizontalLine width c =
 verticalLine = toText "|" |> Text.color grey |> text
 
 graphDisplay =
- (\ges width ->
+ (\ges em width ->
    flow down
     <| intersperse (horizontalLine width)
     <| map (flow right)
     <| map (\level->
         intersperse verticalLine
-        <| map (displayNode ges.selectedNode) level)
+        <| map (displayNode em ges.selectedNode) level)
     <| ges.levelizedGraph)
- <~ graphEditorState ~ Window.width
+ <~ graphEditorState ~ (sampleOn graphEditorState editMode) ~ Window.width
 
 {- add Nodes, Misc(in the future, groups, duplicates) -}
 
