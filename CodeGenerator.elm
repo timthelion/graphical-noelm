@@ -33,7 +33,7 @@ generateCode ges
  in
  if | length errors == 0 ->
       header ++ "\n" ++
-      (concat <| map (\misc->misc++"{-MISC_ENTRY-}"++eolMarker++"\n") ges.misc) ++
+      (concat <| map (\misc->(String.trim misc)++"{-MISC_ENTRY-}"++eolMarker++"\n") ges.misc) ++
       (concat <| nodeCodes)
     | otherwise -> concat <| errors
 
