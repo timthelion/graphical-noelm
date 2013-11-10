@@ -14,7 +14,7 @@ defaultEditorState =
  ,errors         = ""
  ,misc           = []
  ,graph          = sampleGraph
- ,levelizedGraph = []}
+ ,levelizedGraph = levelizeGraph sampleGraph}
 
 emptyEditorState = 
  {selectedNode   = emptyNode
