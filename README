@@ -1,0 +1,22 @@
+How to build:
+
+Quick version:
+elm --make -o GraphicalElm.elm
+cp GraphicalElm.html build/GraphicalElm.html
+open build/GraphicalElm.html
+
+Long version:
+
+- First you need a recentish version of the elm compiler
+- Next you need to build graphical-elm:
+
+elm --make -o GraphicalElm.elm
+
+You will end up with a directory named "build" wherein you will find a file called GraphicalElm.js
+
+GraphicalElm.js must be in the same folder as GraphicalElm.html.
+
+I would sugest copying GraphicalElm.html to the build folder and then launching it there:
+
+cp GraphicalElm.html build/GraphicalElm.html
+open build/GraphicalElm.html
