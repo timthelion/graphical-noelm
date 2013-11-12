@@ -84,7 +84,7 @@ parseSavedNode raw =
  if raw == ""
  then Drop
  else
- case String.split "{-_language_" (head <| List.drop 1 headSplit) of
+ case String.split "{-_language_" raw of
   (_::raw'::[]) ->
    let
     languageString = head <| String.split "_base_code_" raw'
