@@ -205,7 +205,7 @@ graphDisplay =
         intersperse verticalLine
         <| map (displayNode em ges.selectedNode) level)
     <| ges.levelizedGraph)
- <~ graphEditorState ~ (sampleOn graphEditorState editMode) ~ Window.width
+ <~ graphEditorState ~ editMode ~ Window.width
 
 {- add Nodes, Misc(in the future, groups, duplicates) -}
 
@@ -238,8 +238,9 @@ loadSavedField =
   "Paste code to load here"
   Graphics.Input.emptyFieldState) <~ loadSavedKeyPress
 
-main =
- (\width gd em addNodeField addMiscField ges lsf editField -> flow down
+arrowIsDown = (\ctrl a b c d fFour-> fFour || (ctrl && (a || b || c || d))) <~ Keyboard.ctrl ~ Keyboard.isDown 37 ~ Keyboard.isDown 38 ~ Keyboard.isDown 39 ~ Keyboard.isDown 40 ~ Keyboard.isDown 115
+
+gui = (\width gd em addNodeField addMiscField ges lsf editField -> flow down
   [gd
   ,coloredHorizontalLine width black
   ,horizontalLine width
@@ -269,6 +270,11 @@ main =
     SaveCompile -> plainText <| generateCode ges
     _ -> plainText ""])
  <~ Window.width ~ graphDisplay ~ editMode ~ addNodeFieldS ~ addMiscFieldS ~ graphEditorState ~ loadSavedField ~ editFieldS
+
+main = (\gui isDown ->
+ if | isDown -> plainText ""
+    | otherwise -> gui) <~ gui ~ arrowIsDown
+
 {-
 Graphical ELM - A program for editing graphs as graphs.
 Visually, Architecturally
