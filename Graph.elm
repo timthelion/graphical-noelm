@@ -16,15 +16,17 @@ import open List
 
 {- data types -}
 type Graph = [Node]
+
 data Language = ElmLang | Ikcilpazc
+
 type Value = 
  {code: String
  ,language: Language}
+
 type Node =
  {parents: [String]
  ,name: String
  ,value: Value}
-
 
 sampleGraph =
  [{parents=[]

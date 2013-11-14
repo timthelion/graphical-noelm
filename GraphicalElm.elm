@@ -17,89 +17,48 @@ See more licence information at the end of the file, and or in the file COPYING.
 module GraphicalElm where
 import open List
 import Keyboard
+import Keyboard.Keys
 import Window
 import Graphics.Input
 import Either
 import String
 
-import open Graph
+import Graph
 import open Coordinates
 import open CodeGenerator
-import open GraphEditorState
+import GraphEditorState
+import GraphEditorEvents
+import GraphEditorStateMachine
+import open EditModes
 
-data EditMode = Code | Language | Name | Parents | Delete | Explore | SaveCompile | CodeView
-
-editMode =
- dropRepeats
- <| foldp
-  (\down oldMode->
-   if down
-    then
-     case oldMode of
-      Code -> Language
-      Language -> Name
-      Name -> Parents
-      Parents -> Delete
-      Delete -> Explore
-      Explore -> SaveCompile
-      SaveCompile -> CodeView
-      CodeView -> Code
-    else oldMode)
-  Explore
-  <| Keyboard.isDown 115
+movement = merge ctrlArrows hjklMovement
 
 ctrlArrows =
- (\arrs->Arrows {arrs|y<- -arrs.y})
+ (\arrs->GraphEditorEvents.Arrows arrs)
  <~
   keepWhen
    Keyboard.ctrl
    {x=0,y=0}
    Keyboard.arrows
 
-graphEditorFields = Graphics.Input.fields NoEvent
+hjklMovement =
+ (\arrs-> GraphEditorEvents.Arrows arrs)
+ <~ Keyboard.directionKeys Keyboard.Keys.j Keyboard.Keys.k Keyboard.Keys.h Keyboard.Keys.l
 
-applyKeyPress = keepIf id False <| (Keyboard.isDown 13)
+graphEditorFields = Graphics.Input.fields GraphEditorEvents.NoEvent
 
-graphEditorButtons = Graphics.Input.buttons NoEvent
+applyKeyPress = keepIf id False <| (Keyboard.isKeyDown Keyboard.Keys.enter)
 
-data GraphEditorEvent
- = NoEvent
- | Replace Node
- | SetState GraphEditorState
- | ParseError String
- | AddNode Node
- | AddMisc String
- | DeleteEvent Node
- | Rename {oldName: String, newName: String}
- | Arrows {x:Int,y:Int}
+graphEditorButtons = Graphics.Input.buttons GraphEditorEvents.NoEvent
 
-graphEditorState =
- dropRepeats
- <| foldp
-  (\fieldEventM ges ->
-   case fieldEventM of
-    NoEvent          -> ges
 
-    Arrows arrs      -> updateLocation arrs ges
-
-    Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- replaceNode node ges.graph}) |> updateGraphLevelization
-    AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- addNode node ges.graph}) |> updateGraphLevelization
-    AddMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- ges.misc ++ [misc]})
-    DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- deleteNode node.name ges.graph}) |> updateGraphLevelization
-    Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- renameNode rename.oldName rename.newName ges.graph}) |> updateGraphLevelization
-
-    SetState ges  -> ges |> updateGraphLevelization
-    ParseError err   -> {ges|errors<-err}
-    )
-  defaultEditorState
-  <| merges
+graphEditorState = GraphEditorStateMachine.graphEditorState <| merges
    [sampleOn applyKeyPress graphEditorFields.events
    ,graphEditorButtons.events
-   ,sampleOn addKeyPress addFields.events
    ,sampleOn loadSavedKeyPress loadSavedFields.events
-   ,ctrlArrows]
+   ,movement]
 
-editField: EditMode -> Node -> Element
+editField: EditMode -> Graph.Node -> Element
 editField em node =
  let
   emptyFieldState=Graphics.Input.emptyFieldState
@@ -111,31 +70,30 @@ editField em node =
      let
       value = node.value
      in
-     Replace {node|value<-{value|code<-fs.string}}
-   in
-    graphEditorFields.field
-     makeEvent
-     node.value.code
-     {emptyFieldState|string<-node.value.code}
-  Language ->
-   let
-    makeEvent lang=
+     GraphEditorEvents.Replace {node|value<-{value|code<-fs.string}}
+    makeLangEvent lang=
      let
       value = node.value
      in
-     Replace {node|value<-{value|language<-lang}}
+     GraphEditorEvents.Replace {node|value<-{value|language<-lang}}
    in
-    flow right <| asText node.value.language ::
-     map
-     (\lang ->
-      graphEditorButtons.button
-       (makeEvent lang)
-       (show lang))
-     [ElmLang,Ikcilpazc]
+   flow right
+   <|(graphEditorFields.field
+         makeEvent
+         node.value.code
+         {emptyFieldState|string<-node.value.code})
+   :: plainText "Language:"
+   :: asText node.value.language
+   :: (map
+       (\lang ->
+        graphEditorButtons.button
+         (makeLangEvent lang)
+         (show lang))
+       [Graph.ElmLang,Graph.Ikcilpazc])
   Name ->
    let
     makeEvent fs =
-     Rename {oldName=node.name,newName=fs.string}
+     GraphEditorEvents.Rename {oldName=node.name,newName=fs.string}
    in
     graphEditorFields.field
      makeEvent
@@ -147,7 +105,7 @@ editField em node =
      let
       newParents=String.split "," fs.string
      in
-     Replace {node|parents<-
+     GraphEditorEvents.Replace {node|parents<-
                  if | fs.string=="" -> []
                     | otherwise -> newParents}
    in
@@ -157,16 +115,24 @@ editField em node =
      {emptyFieldState|string<-(join "," node.parents)}
   Delete ->
    graphEditorButtons.button
-    (DeleteEvent node)
+    (GraphEditorEvents.DeleteEvent node)
     "Delete"
   Explore -> plainText ""
   CodeView -> plainText ""
   SaveCompile -> plainText ""
+  GlobalAdd ->
+   let
+    addNodeField = graphEditorFields.field ((\en fs->GraphEditorEvents.AddNode {en|name<-fs.string})Graph.emptyNode) "Add node" Graphics.Input.emptyFieldState
+    addMiscField = graphEditorFields.field (\fs->GraphEditorEvents.AddMisc fs.string) "Add misc(imports, type declarations, ect.)" Graphics.Input.emptyFieldState
+   in
+   flow down
+    [addNodeField
+    ,addMiscField]
 
 editFieldS: Signal Element
 editFieldS = (\em ges->editField em ges.selectedNode) <~ editMode ~ graphEditorState
 
-displayNode: EditMode -> Node -> Node -> Element
+displayNode: EditMode -> Graph.Node -> Graph.Node -> Element
 displayNode mode selected node =
  let nodeString = case mode of
        CodeView -> node.value.code
@@ -207,22 +173,11 @@ graphDisplay =
     <| ges.levelizedGraph)
  <~ graphEditorState ~ editMode ~ Window.width
 
-{- add Nodes, Misc(in the future, groups, duplicates) -}
-
-addKeyPress = keepIf id False <| Keyboard.isDown 120
-
-addFields = Graphics.Input.fields NoEvent
-
-addNodeFieldS = (\_->addFields.field (\fs->AddNode {emptyNode|name<-fs.string}) "Add node" Graphics.Input.emptyFieldState) <~ addKeyPress
-
-addMiscFieldS = (\_->addFields.field (\fs->AddMisc fs.string) "Add misc(imports, type declarations, ect.)" Graphics.Input.emptyFieldState) <~ addKeyPress
-
-
 {- load saved -}
 
-loadSavedKeyPress = keepIf id False <| Keyboard.isDown 113
+loadSavedKeyPress = keepIf id False <| Keyboard.isKeyDown Keyboard.Keys.f2
 
-loadSavedFields = Graphics.Input.fields NoEvent
+loadSavedFields = Graphics.Input.fields GraphEditorEvents.NoEvent
 
 loadSavedField =
  (\_->
@@ -232,15 +187,15 @@ loadSavedField =
      parsedM = parseSavedGraph fs.string
     in
     case parsedM of
-     Either.Right ges -> SetState ges 
-     Either.Left err -> ParseError err
+     Either.Right ges -> GraphEditorEvents.SetState ges 
+     Either.Left err -> GraphEditorEvents.ParseError err
      )
   "Paste code to load here"
   Graphics.Input.emptyFieldState) <~ loadSavedKeyPress
 
-arrowIsDown = (\ctrl a b c d fFour-> fFour || (ctrl && (a || b || c || d))) <~ Keyboard.ctrl ~ Keyboard.isDown 37 ~ Keyboard.isDown 38 ~ Keyboard.isDown 39 ~ Keyboard.isDown 40 ~ Keyboard.isDown 115
+arrowIsDown = (\ctrl a b c d fFour-> fFour || (ctrl && (a || b || c || d))) <~ Keyboard.ctrl ~ Keyboard.isKeyDown Keyboard.Keys.arrowLeft ~ Keyboard.isKeyDown Keyboard.Keys.arrowRight ~ Keyboard.isKeyDown Keyboard.Keys.arrowUp ~ Keyboard.isKeyDown Keyboard.Keys.arrowDown ~ Keyboard.isKeyDown Keyboard.Keys.f4
 
-gui = (\width gd em addNodeField addMiscField ges lsf editField -> flow down
+gui = (\width gd em ges lsf editField -> flow down
   [gd
   ,coloredHorizontalLine width black
   ,horizontalLine width
@@ -248,12 +203,6 @@ gui = (\width gd em addNodeField addMiscField ges lsf editField -> flow down
   ,flow right [plainText <| "Edit mode: "++show em,verticalLine,plainText <| "Press F4 to change modes."]
   ,flow right [editField,verticalLine,plainText "Press enter to apply changes."]
   ,coloredHorizontalLine width black
-  ,horizontalLine width
-  ,horizontalLine width
-  ,flow right [addNodeField,verticalLine,plainText "Press F9 to add node."]
-  ,horizontalLine width
-  ,flow right [addMiscField,verticalLine,plainText "Press F9 to add misc."] 
-  ,horizontalLine width
   ,horizontalLine width
   ,horizontalLine width
   ,plainText "In order to load a saved graph; paste generated code here and then press the Home key and F2 to load."
@@ -269,7 +218,7 @@ gui = (\width gd em addNodeField addMiscField ges lsf editField -> flow down
   ,case em of
     SaveCompile -> plainText <| generateCode ges
     _ -> plainText ""])
- <~ Window.width ~ graphDisplay ~ editMode ~ addNodeFieldS ~ addMiscFieldS ~ graphEditorState ~ loadSavedField ~ editFieldS
+ <~ Window.width ~ graphDisplay ~ editMode ~ graphEditorState ~ loadSavedField ~ editFieldS
 
 main = (\gui isDown ->
  if | isDown -> plainText ""
