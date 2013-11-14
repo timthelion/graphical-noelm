@@ -37,13 +37,12 @@ graphEditorState events =
 updateLocation: {x:Int,y:Int} -> GraphEditorState.GraphEditorState -> GraphEditorState.GraphEditorState
 updateLocation arrs ges =
  let
-  ourCoordinates = Coordinates.coordinates ges.levelizedGraph
   moved = arrs.x/=0|| arrs.y/=0
  in
  if | moved ->
      let
       oldCoord =
-       Coordinates.getCoord ges.selectedNode.name ourCoordinates
+       Coordinates.getCoord ges.selectedNode.name ges.coordinates
       newCoord =
        {x = max ( arrs.x + oldCoord.x ) 0
        ,y = max ( arrs.y + oldCoord.y ) 0}
@@ -53,8 +52,7 @@ updateLocation arrs ges =
 restoreCoordinates: GraphEditorState.GraphEditorState -> (GraphEditorState.GraphEditorState -> GraphEditorState.GraphEditorState) -> GraphEditorState.GraphEditorState
 restoreCoordinates ges f =
  let
-  ourCoordinates = Coordinates.coordinates ges.levelizedGraph
-  oldCoord = Coordinates.getCoord ges.selectedNode.name ourCoordinates
+  oldCoord = Coordinates.getCoord ges.selectedNode.name ges.coordinates
  in
  setSelectedNode (f ges) oldCoord
 
@@ -62,15 +60,18 @@ setSelectedNode: GraphEditorState.GraphEditorState -> {x:Int,y:Int} -> GraphEdit
 setSelectedNode ges coord =
  {ges|selectedNode <-
   let
-   ourCoordinates = Coordinates.coordinates ges.levelizedGraph
-   newSelectedNode = Coordinates.getNode coord ourCoordinates
+   newSelectedNode = Coordinates.getNode coord ges.coordinates
   in
   if | newSelectedNode.name == "" -> ges.selectedNode
      | otherwise -> newSelectedNode}
 
 updateGraphLevelization: GraphEditorState.GraphEditorState -> GraphEditorState.GraphEditorState
 updateGraphLevelization ges =
- {ges|levelizedGraph<-Graph.levelizeGraph ges.graph}
+ let
+  levelized = Graph.levelizeGraph ges.graph
+ in
+ {ges|levelizedGraph<-levelized
+     ,coordinates<-Coordinates.coordinates levelized}
 
 {-
 Graphical ELM - A program for editing graphs as graphs.
