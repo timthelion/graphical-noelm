@@ -193,14 +193,12 @@ loadSavedField =
   "Paste code to load here"
   Graphics.Input.emptyFieldState) <~ loadSavedKeyPress
 
-arrowIsDown = (\ctrl a b c d fFour-> fFour || (ctrl && (a || b || c || d))) <~ Keyboard.ctrl ~ Keyboard.isKeyDown Keyboard.Keys.arrowLeft ~ Keyboard.isKeyDown Keyboard.Keys.arrowRight ~ Keyboard.isKeyDown Keyboard.Keys.arrowUp ~ Keyboard.isKeyDown Keyboard.Keys.arrowDown ~ Keyboard.isKeyDown Keyboard.Keys.f4
-
 gui = (\width gd em ges lsf editField -> flow down
   [gd
   ,coloredHorizontalLine width black
   ,horizontalLine width
   ,horizontalLine width
-  ,flow right [plainText <| "Edit mode: "++show em,verticalLine,plainText <| "Press F4 to change modes."]
+  ,flow right [plainText <| "Edit mode: "++show em]
   ,flow right [editField,verticalLine,plainText "Press enter to apply changes."]
   ,coloredHorizontalLine width black
   ,horizontalLine width
@@ -220,9 +218,7 @@ gui = (\width gd em ges lsf editField -> flow down
     _ -> plainText ""])
  <~ Window.width ~ graphDisplay ~ editMode ~ graphEditorState ~ loadSavedField ~ editFieldS
 
-main = (\gui isDown ->
- if | isDown -> plainText ""
-    | otherwise -> gui) <~ gui ~ arrowIsDown
+main = gui
 
 {-
 Graphical ELM - A program for editing graphs as graphs.
