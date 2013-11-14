@@ -50,7 +50,7 @@ editModes =
 
  ,{mode = CodeView
   ,navigationMode = Move
-  ,keyBindings = [Keyboard.Keys.v]
+  ,keyBindings = [Keyboard.Keys.d]
   ,docs = "View the code of each node in the graph view rather than it's name."}
 
  ,{mode = GlobalAdd
