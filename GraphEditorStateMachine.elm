@@ -41,20 +41,15 @@ updateLocation arrs ges =
  in
  if | moved ->
      let
-      oldCoord =
-       Coordinates.getCoord ges.selectedNode.name ges.coordinates
       newCoord =
-       {x = max ( arrs.x + oldCoord.x ) 0
-       ,y = max ( arrs.y + oldCoord.y ) 0}
+       {x = max ( arrs.x + ges.selectedCoordinate.x ) 0
+       ,y = max ( arrs.y + ges.selectedCoordinate.y ) 0}
      in setSelectedNode ges newCoord
     | otherwise -> ges
 
 restoreCoordinates: GraphEditorState.GraphEditorState -> (GraphEditorState.GraphEditorState -> GraphEditorState.GraphEditorState) -> GraphEditorState.GraphEditorState
 restoreCoordinates ges f =
- let
-  oldCoord = Coordinates.getCoord ges.selectedNode.name ges.coordinates
- in
- setSelectedNode (f ges) oldCoord
+ setSelectedNode (f ges) ges.selectedCoordinate
 
 setSelectedNode: GraphEditorState.GraphEditorState -> {x:Int,y:Int} -> GraphEditorState.GraphEditorState
 setSelectedNode ges coord =
@@ -63,7 +58,8 @@ setSelectedNode ges coord =
    newSelectedNode = Coordinates.getNode coord ges.coordinates
   in
   if | newSelectedNode.name == "" -> ges.selectedNode
-     | otherwise -> newSelectedNode}
+     | otherwise -> newSelectedNode
+  ,selectedCoordinate <- coord}
 
 updateGraphLevelization: GraphEditorState.GraphEditorState -> GraphEditorState.GraphEditorState
 updateGraphLevelization ges =

@@ -4,6 +4,7 @@ import Coordinates
 
 type GraphEditorState =
  {selectedNode: Graph.Node
+ ,selectedCoordinate: Coordinates.Coord
  ,errors: String
  ,misc: [String]
  ,graph: Graph.Graph
@@ -15,6 +16,7 @@ defaultEditorState =
   levelized = Graph.levelizeGraph Graph.sampleGraph
  in
  {selectedNode   = Graph.emptyNode
+ ,selectedCoordinate = {x=0,y=0}
  ,errors         = ""
  ,misc           = []
  ,graph          = Graph.sampleGraph
@@ -23,6 +25,7 @@ defaultEditorState =
 
 emptyEditorState = 
  {selectedNode   = Graph.emptyNode
+ ,selectedCoordinate = {x=0,y=0}
  ,errors         = ""
  ,misc           = []
  ,graph          = []
