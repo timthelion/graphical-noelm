@@ -30,6 +30,7 @@ import GraphEditorState
 import GraphEditorEvents
 import GraphEditorStateMachine
 import open EditModes
+import EditModeHelp
 
 movement = merge ctrlArrows hjklMovement
 
@@ -45,18 +46,17 @@ hjklMovement =
  (\arrs-> GraphEditorEvents.Arrows arrs)
  <~ Keyboard.directionKeys Keyboard.Keys.j Keyboard.Keys.k Keyboard.Keys.h Keyboard.Keys.l
 
-graphEditorFields = Graphics.Input.fields GraphEditorEvents.NoEvent
-
-applyKeyPress = keepIf id False <| (Keyboard.isKeyDown Keyboard.Keys.enter)
-
-graphEditorButtons = Graphics.Input.buttons GraphEditorEvents.NoEvent
-
-
 graphEditorState = GraphEditorStateMachine.graphEditorState <| merges
    [sampleOn applyKeyPress graphEditorFields.events
    ,graphEditorButtons.events
    ,sampleOn loadSavedKeyPress loadSavedFields.events
    ,movement]
+
+graphEditorFields = Graphics.Input.fields GraphEditorEvents.NoEvent
+
+applyKeyPress = keepIf id False <| (Keyboard.isKeyDown Keyboard.Keys.enter)
+
+graphEditorButtons = Graphics.Input.buttons GraphEditorEvents.NoEvent
 
 editField: EditMode -> Graph.Node -> Element
 editField em node =
@@ -202,6 +202,7 @@ gui = (\width gd em ges lsf editField -> flow down
   ,flow right [editField,verticalLine,plainText "Press enter to apply changes."]
   ,coloredHorizontalLine width black
   ,horizontalLine width
+  ,EditModeHelp.help
   ,horizontalLine width
   ,plainText "In order to load a saved graph; paste generated code here and then press the Home key and F2 to load."
   ,lsf

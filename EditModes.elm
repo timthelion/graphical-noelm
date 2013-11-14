@@ -56,7 +56,7 @@ editModes =
  ,{mode = GlobalAdd
   ,navigationMode = Insert
   ,keyBindings = [Keyboard.Keys.a]
-  ,docs = "Add global attributes like imports and data declarations, or add new nodes to your graph."}]
+  ,docs = "Add new nodes to your graph or add global attributes like imports and data declarations"}]
 
 getModeInfo: EditMode -> ModeInfo
 getModeInfo mode =
