@@ -1,33 +1,24 @@
 module GraphEditorState where
 import Graph
-import Coordinates
+import open Coordinates
 
 type GraphEditorState =
  {selectedNode: Graph.Node
- ,selectedCoordinate: Coordinates.Coord
  ,errors: String
  ,misc: [String]
  ,graph: Graph.Graph
- ,levelizedGraph: [[Graph.Node]]
- ,coordinates: [(Coordinates.Coord,Graph.Node)]}
+ ,levelizedGraph: [[Graph.Node]]}
 
 defaultEditorState =
- let
-  levelized = Graph.levelizeGraph Graph.sampleGraph
- in
  {selectedNode   = Graph.emptyNode
- ,selectedCoordinate = {x=0,y=0}
  ,errors         = ""
  ,misc           = []
  ,graph          = Graph.sampleGraph
- ,levelizedGraph = levelized
- ,coordinates    = Coordinates.coordinates <| levelized}
+ ,levelizedGraph = Graph.levelizeGraph Graph.sampleGraph}
 
 emptyEditorState = 
  {selectedNode   = Graph.emptyNode
- ,selectedCoordinate = {x=0,y=0}
  ,errors         = ""
  ,misc           = []
  ,graph          = []
- ,levelizedGraph = []
- ,coordinates    = []}
+ ,levelizedGraph = []}
