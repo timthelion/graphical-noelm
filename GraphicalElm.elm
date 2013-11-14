@@ -35,7 +35,7 @@ import EditModeHelp
 movement = merge ctrlArrows hjklMovement
 
 ctrlArrows =
- (\arrs->GraphEditorEvents.Arrows arrs)
+ (\arrs->GraphEditorEvents.Arrows {arrs|y <- -arrs.y})
  <~
   keepWhen
    Keyboard.ctrl
@@ -132,7 +132,28 @@ editField em node =
 editFieldS: Signal Element
 editFieldS = (\em ges->editField em ges.selectedNode) <~ editMode ~ graphEditorState
 
+{-
 displayNode: EditMode -> Graph.Node -> Graph.Node -> Element
+displayNode mode selected node =
+ let nodeString = case mode of
+       CodeView -> node.value.code
+       _ -> node.name
+ in
+ if | node.name==selected.name ->
+        let nodeText: Text
+            nodeText = monospace <| toText (String.cons '*' nodeString)
+            coloredText: Text
+            coloredText = Text.color green nodeText
+            selectedElm: Element
+            selectedElm = text coloredText
+        in
+        selectedElm
+    | any (\np->node.name==np) selected.parents -> toText nodeString |> Text.color red |> monospace |> text
+    | any (\np->selected.name==np) node.parents ->  toText nodeString |> Text.color blue |> monospace |> text
+    | otherwise -> text <|monospace <| toText nodeString
+-}
+
+displayNode: EditMode -> Graph.Node -> Graph.Node -> String
 displayNode mode selected node =
  let nodeString = case mode of
        CodeView -> node.value.code
@@ -161,7 +182,7 @@ coloredHorizontalLine width c =
       (toFloat width/2,0)]
 
 verticalLine = toText "|" |> Text.color grey |> text
-
+{-
 graphDisplay =
  (\ges em width ->
    flow down
@@ -172,6 +193,14 @@ graphDisplay =
         <| map (displayNode em ges.selectedNode) level)
     <| ges.levelizedGraph)
  <~ graphEditorState ~ editMode ~ Window.width
+-}
+
+graphDisplay =
+ (\ges em width ->
+   flow down
+    (map (\level->plainText <| concat <| map (\node -> if | node.name == ges.selectedNode.name -> concat ["*",node.name]
+                                                          | otherwise -> node.name) level) ges.levelizedGraph)
+  ) <~ graphEditorState ~ editMode ~ Window.width
 
 {- load saved -}
 
