@@ -35,7 +35,7 @@ import EditModeHelp
 movement = merge ctrlArrows hjklMovement
 
 ctrlArrows =
- (\arrs->GraphEditorEvents.Arrows arrs)
+ (\arrs->GraphEditorEvents.Arrows {arrs|y<- -arrs.y})
  <~
   keepWhen
    Keyboard.ctrl
@@ -43,7 +43,7 @@ ctrlArrows =
    Keyboard.arrows
 
 hjklMovement =
- (\arrs-> GraphEditorEvents.Arrows arrs)
+ (\arrs-> GraphEditorEvents.Arrows {arrs|y<- -arrs.y})
  <~ Keyboard.directionKeys Keyboard.Keys.k Keyboard.Keys.j Keyboard.Keys.h Keyboard.Keys.l
 
 graphEditorState = GraphEditorStateMachine.graphEditorState <| merges
