@@ -27,6 +27,17 @@ editModes =
   ,keyBindings = [Keyboard.Keys.escape]
   ,docs = "Move arround using the hjkl keys like in Vim."}
 
+ ,{mode = SaveCompile
+  ,navigationMode = Move
+  ,keyBindings = [Keyboard.Keys.s]
+  ,docs = "Save and compile your graphical elm code."}
+
+ ,{mode = CodeView
+  ,navigationMode = Move
+  ,keyBindings = [Keyboard.Keys.e]
+  ,docs = "View the code of each node in the graph view rather than it's name."}
+
+
  ,{mode = Code
   ,navigationMode = Insert
   ,keyBindings = [Keyboard.Keys.i
@@ -43,15 +54,10 @@ editModes =
   ,keyBindings = [Keyboard.Keys.p]
   ,docs = "Set what other nodes this node depends upon."}
 
- ,{mode = SaveCompile
-  ,navigationMode = Move
-  ,keyBindings = [Keyboard.Keys.s]
-  ,docs = "Save and compile your graphical elm code."}
-
- ,{mode = CodeView
-  ,navigationMode = Move
+ ,{mode = Delete
+  ,navigationMode = Insert
   ,keyBindings = [Keyboard.Keys.d]
-  ,docs = "View the code of each node in the graph view rather than it's name."}
+  ,docs = "Delete the current node."}
 
  ,{mode = GlobalAdd
   ,navigationMode = Insert
@@ -77,6 +83,11 @@ editMode =
         | otherwise -> oldMode)
   Explore
   <| Keyboard.lastPressed
+
+moveMode: Signal Bool
+moveMode =
+ (\em-> (getModeInfo em).navigationMode == Move)
+ <~ editMode
 
 {-
 Graphical ELM - A program for editing graphs as graphs.
