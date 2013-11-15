@@ -44,7 +44,7 @@ ctrlArrows =
 
 hjklMovement =
  (\arrs-> GraphEditorEvents.Arrows arrs)
- <~ Keyboard.directionKeys Keyboard.Keys.j Keyboard.Keys.k Keyboard.Keys.h Keyboard.Keys.l
+ <~ Keyboard.directionKeys Keyboard.Keys.k Keyboard.Keys.j Keyboard.Keys.h Keyboard.Keys.l
 
 graphEditorState = GraphEditorStateMachine.graphEditorState <| merges
    [sampleOn applyKeyPress graphEditorFields.events
@@ -58,9 +58,10 @@ applyKeyPress = keepIf id False <| (Keyboard.isKeyDown Keyboard.Keys.enter)
 
 graphEditorButtons = Graphics.Input.buttons GraphEditorEvents.NoEvent
 
-editField: EditMode -> Graph.Node -> Element
-editField em node =
+editField: EditMode -> GraphEditorState.GraphEditorState -> Element
+editField em ges =
  let
+  node = ges.selectedNode
   emptyFieldState=Graphics.Input.emptyFieldState
  in
  case em of
@@ -126,11 +127,11 @@ editField em node =
     addMiscField = graphEditorFields.field (\fs->GraphEditorEvents.AddMisc fs.string) "Add misc(imports, type declarations, ect.)" Graphics.Input.emptyFieldState
    in
    flow down
-    [addNodeField
-    ,addMiscField]
+    <| [addNodeField
+       ,addMiscField] ++ map plainText ges.misc
 
 editFieldS: Signal Element
-editFieldS = (\em ges->editField em ges.selectedNode) <~ editMode ~ graphEditorState
+editFieldS = (\em ges->editField em ges) <~ editMode ~ graphEditorState
 
 displayNode: EditMode -> Graph.Node -> Graph.Node -> Element
 displayNode mode selected node =
