@@ -1,6 +1,8 @@
 How to build:
 
 Quick version:
+git clone https://github.com/timthelion/elm-key-constants.git
+ln -s elm-key-constants/Keyboard/ Keyboard/
 elm --make -o GraphicalElm.elm
 cp GraphicalElm.html build/GraphicalElm.html
 open build/GraphicalElm.html
@@ -8,6 +10,11 @@ open build/GraphicalElm.html
 Long version:
 
 - First you need a recentish version of the elm compiler
+- Then you need to get the key-constants library:
+
+git clone https://github.com/timthelion/elm-key-constants.git
+ln -s elm-key-constants/Keyboard/ Keyboard/
+
 - Next you need to build graphical-elm:
 
 elm --make -o GraphicalElm.elm
