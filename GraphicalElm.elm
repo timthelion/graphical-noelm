@@ -46,7 +46,7 @@ hjklMovement =
   keepWhen
    moveMode
    {x=0,y=0}
-   (Keyboard.directionKeys Keyboard.Keys.k Keyboard.Keys.j Keyboard.Keys.h Keyboard.Keys.l)
+   (Keyboard.Keys.directionKeys Keyboard.Keys.k Keyboard.Keys.j Keyboard.Keys.h Keyboard.Keys.l)
 
 graphEditorState = GraphEditorStateMachine.graphEditorState <| merges
    [sampleOn applyKeyPress graphEditorFields.events
@@ -56,7 +56,7 @@ graphEditorState = GraphEditorStateMachine.graphEditorState <| merges
 
 graphEditorFields = Graphics.Input.fields GraphEditorEvents.NoEvent
 
-applyKeyPress = keepIf id False <| (Keyboard.isKeyDown Keyboard.Keys.enter)
+applyKeyPress = keepIf id False <| (Keyboard.Keys.isKeyDown Keyboard.Keys.enter)
 
 graphEditorButtons = Graphics.Input.buttons GraphEditorEvents.NoEvent
 
@@ -178,7 +178,7 @@ graphDisplay =
 
 {- load saved -}
 
-loadSavedKeyPress = keepIf id False <| Keyboard.isKeyDown Keyboard.Keys.f2
+loadSavedKeyPress = keepIf id False <| Keyboard.Keys.isKeyDown Keyboard.Keys.f2
 
 loadSavedFields = Graphics.Input.fields GraphEditorEvents.NoEvent
 
