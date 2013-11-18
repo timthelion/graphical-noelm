@@ -11,28 +11,29 @@ import State.EditorEvents as EditorEvents
 import State.EditorState as EditorState
 
 
-graphEditorState: Signal EditorEvents.EditorEvent -> Signal EditorState.EditorState
+graphEditorState: Signal [EditorEvents.EditorEvent] -> Signal EditorState.EditorState
 graphEditorState events =
  dropRepeats
  <| foldp
-  (\fieldEventM ges ->
-   case fieldEventM of
+  (\fieldEvents ges -> foldl applyEvents ges fieldEvents)
+  EditorState.defaultEditorState
+  events
+
+applyEvents fieldEvent ges =
+   case fieldEvent of
     EditorEvents.NoEvent          -> ges
 
     EditorEvents.Arrows arrs      -> updateLocation arrs ges
 
     EditorEvents.Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- Graph.replaceNode node ges.graph}) |> updateGraphLevelization
     EditorEvents.AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- Graph.addNode node ges.graph}) |> updateGraphLevelization
-    EditorEvents.AddMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- ges.misc ++ [misc]})
+    EditorEvents.SetMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- misc})
     EditorEvents.DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- Graph.deleteNode node.name ges.graph}) |> updateGraphLevelization
     EditorEvents.Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- Graph.renameNode rename.oldName rename.newName ges.graph}) |> updateGraphLevelization
 
     EditorEvents.SetState ges  -> ges |> updateGraphLevelization
     EditorEvents.ParseError err   -> {ges|errors<-err}
-    )
-  EditorState.defaultEditorState
-  events
-
+    
 
 {- Cursor movement -}
 

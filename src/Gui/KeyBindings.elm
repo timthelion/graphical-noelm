@@ -36,6 +36,9 @@ hjklMovement moveMode =
 
 {- Form submition -}
 
-applyKeyPress = keepIf id False <| (Keyboard.Keys.isKeyDown Keyboard.Keys.enter)
+applyKeyPress
+ =  keepWhen (not <~ Keyboard.Keys.isKeyDown Keyboard.Keys.shift) True
+ <| keepIf id False
+ <| Keyboard.Keys.isKeyDown Keyboard.Keys.enter
 
 loadSavedKeyPress = keepIf id False <| Keyboard.Keys.isKeyDown Keyboard.Keys.f2

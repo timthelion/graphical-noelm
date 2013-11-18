@@ -9,7 +9,7 @@ data EditorEvent
  | SetState EditorState.EditorState
  | ParseError String
  | AddNode Graph.Node
- | AddMisc String
+ | SetMisc String
  | DeleteEvent Graph.Node
  | Rename {oldName: String, newName: String}
  | Arrows {x:Int,y:Int}

@@ -41,8 +41,9 @@ import State.EditModes as EditModes
 {- The main program state -}
 graphEditorState
  =  EditorStateMachine.graphEditorState
- <| merges
-     [editFieldApply
+ <| combine
+     [editFieldEvents
+     ,editFieldMultilineEvents
      ,editButtonEvents
      ,loadSavedFieldEvents
      ,movement]
@@ -75,7 +76,15 @@ editFieldS
  <~ editMode
  ~  graphEditorState
 
-editFieldApply = EditFields.editFieldApply applyKeyPress
+editFieldEvents =
+ sampleOn
+  (merge ((\_->True)<~ editMode) ((\_->True)<~movement))
+  ((.events) EditFields.editorFields)
+
+editFieldMultilineEvents =
+ sampleOn
+  (merge ((\_->True)<~ editMode) ((\_->True)<~movement))
+  ((.events) EditFields.editorFieldsMultiline)
 
 editButtonEvents = EditFields.editButtonEvents
 

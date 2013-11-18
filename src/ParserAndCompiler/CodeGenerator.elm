@@ -34,7 +34,7 @@ generateCode ges
  in
  if | length errors == 0 ->
       header ++ "\n" ++
-      (concat <| map (\misc->(String.trim misc)++"{-MISC_ENTRY-}"++eolMarker++"\n") ges.misc) ++
+      (concat <| map (\misc->(String.trim misc)++"{-MISC_ENTRY-}"++eolMarker++"\n") <| String.lines ges.misc) ++
       (concat <| nodeCodes)
     | otherwise -> concat <| errors
 
@@ -59,7 +59,7 @@ parseEntry entry gesE =
  let
   parseMisc' ges =
    case parseMisc entry of
-    (Parsed m)  -> Either.Right {ges|misc<-m::ges.misc}
+    (Parsed m)  -> Either.Right {ges|misc<-m++"\n"++ges.misc}
     Drop        -> Either.Right ges
     (Error err) -> Either.Left  err
   parseSavedNode' ges =

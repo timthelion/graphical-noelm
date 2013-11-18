@@ -10,7 +10,7 @@ module State.EditModes where
 import Keyboard
 import Keyboard.Keys
 
-data EditMode = Code | Name | Parents | Delete | Explore | SaveCompile | CodeView | GlobalAdd
+data EditMode = Code | Name | Parents | Delete | Explore | SaveOpen | CodeView | AddNode | Misc
 
 data NavigationMode = Move | Insert
 
@@ -27,16 +27,10 @@ editModes =
   ,keyBindings = [Keyboard.Keys.escape]
   ,docs = "Move arround using the hjkl keys like in Vim."}
 
- ,{mode = SaveCompile
-  ,navigationMode = Move
-  ,keyBindings = [Keyboard.Keys.s]
-  ,docs = "Save and compile your graphical elm code."}
-
  ,{mode = CodeView
   ,navigationMode = Move
   ,keyBindings = [Keyboard.Keys.e]
   ,docs = "View the code of each node in the graph view rather than it's name."}
-
 
  ,{mode = Code
   ,navigationMode = Insert
@@ -59,10 +53,20 @@ editModes =
   ,keyBindings = [Keyboard.Keys.d]
   ,docs = "Delete the current node."}
 
- ,{mode = GlobalAdd
+ ,{mode = AddNode
   ,navigationMode = Insert
   ,keyBindings = [Keyboard.Keys.a]
-  ,docs = "Add new nodes to your graph or add global attributes like imports and data declarations"}]
+  ,docs = "Add new nodes to your graph"}
+
+ ,{mode = Misc
+  ,navigationMode = Insert
+  ,keyBindings = [Keyboard.Keys.m]
+  ,docs = "Import external modules and declare new data types here."}
+
+ ,{mode = SaveOpen
+  ,navigationMode = Insert
+  ,keyBindings = [Keyboard.Keys.s]
+  ,docs = "Save or open your graphical elm code."}]
 
 getModeInfo: EditMode -> ModeInfo
 getModeInfo mode =
