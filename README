@@ -5,8 +5,7 @@ git clone https://github.com/timthelion/elm-key-constants.git
 cd src
 ln -s ../elm-key-constants/Keyboard/ Keyboard/
 elm --make -o GraphicalElm.elm
-cp GraphicalElm.html build/GraphicalElm.html
-open build/GraphicalElm.html
+open GraphicalElm.html
 
 Long version:
 
@@ -24,11 +23,6 @@ ln -s elm-key-constants/Keyboard/ Keyboard/
 
 elm --make -o GraphicalElm.elm
 
-You will end up with a directory named "build" wherein you will find a file called GraphicalElm.js
+You can now run the editor with:
 
-GraphicalElm.js must be in the same folder as GraphicalElm.html.
-
-I would sugest copying GraphicalElm.html to the build folder and then launching it there:
-
-cp GraphicalElm.html build/GraphicalElm.html
-open build/GraphicalElm.html
+open GraphicalElm.html
