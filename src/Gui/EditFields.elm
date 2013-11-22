@@ -20,32 +20,19 @@ import State.EditorState as EditorState
 import LevelizedGraphs.Graph as Graph
 import ParserAndCompiler.CodeGenerator as CodeGenerator
 
-
-editFieldBuilder: EditModes.EditMode -> EditorState.EditorState -> (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
-editFieldBuilder em ges =
+codeField: EditorState.EditorState ->  (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
+codeField ges =
  let
   node = ges.selectedNode
-  emptyFieldState=Graphics.Input.emptyFieldState
-  ignoreFieldState element = (emptyFieldState ,(\fs->element))
+  value = node.value
+  makeEvent: Graphics.Input.FieldState -> (Graphics.Input.FieldState,EditorEvents.EditorEvent)
+  makeEvent fs =
+   (fs,EditorEvents.Replace {node|value<-{value|code<-fs.string}})
+  makeLangEvent lang =
+   EditorEvents.Replace {node|value<-{value|language<-lang}}
  in
- case em of
-  EditModes.Code ->
-   let
-    makeEvent: Graphics.Input.FieldState -> (Graphics.Input.FieldState,EditorEvents.EditorEvent)
-    makeEvent fs =
-     let
-      value = node.value
-     in
-     (fs
-     ,EditorEvents.Replace {node|value<-{value|code<-fs.string}})
-    makeLangEvent lang=
-     let
-      value = node.value
-     in
-     EditorEvents.Replace {node|value<-{value|language<-lang}}
-   in
-   ({emptyFieldState|string<-node.value.code}
-   ,(\fs->
+  ({emptyFieldState|string<-node.value.code}
+  ,(\fs->
    flow right
    <|(editorFields.field
          makeEvent
@@ -59,52 +46,77 @@ editFieldBuilder em ges =
          (makeLangEvent lang)
          (show lang))
        [Graph.ElmLang,Graph.Ikcilpazc])))
-  EditModes.Name ->
-   let
-    makeEvent fs =
-     (fs
-     ,EditorEvents.Rename {oldName=node.name,newName=fs.string})
-   in
-   ({emptyFieldState|string<-node.name}
-   ,(\fs->
+
+nameField ges =
+ let
+  node = ges.selectedNode
+  makeEvent fs =
+   (fs,EditorEvents.Rename {oldName=node.name,newName=fs.string})
+ in
+  ({emptyFieldState|string<-node.name}
+  ,(\fs->
     editorFields.field
      makeEvent
      node.name
      fs))
-  EditModes.Parents ->
+
+parentsField ges =
+ let
+  node = ges.selectedNode
+  makeEvent fs =
    let
-    makeEvent fs =
-     let
-      newParents=String.split "," fs.string
-     in
-     (fs
-     ,EditorEvents.Replace {node|parents<-
-                 if | fs.string=="" -> []
-                    | otherwise -> newParents})
+    newParents=String.split "," fs.string
    in
-   ({emptyFieldState|string<-(join "," node.parents)}
-   ,(\fs->
-    editorFields.field
-     makeEvent
-     (join "," node.parents)
-     fs))
-  EditModes.Delete ->
-   ignoreFieldState <|
-   editorButtons.button
-    (EditorEvents.DeleteEvent node)
-    "Delete"
-  EditModes.Explore -> ignoreFieldState <| plainText ""
-  EditModes.CodeView -> ignoreFieldState <| plainText ""
-  EditModes.SaveOpen ->
-    let
-     setStateEvent fs =
-      case CodeGenerator.parseSavedGraph fs.string of
-       Either.Left err -> (fs,EditorEvents.ParseError err)
-       Either.Right newState -> (fs,EditorEvents.SetState newState)
-     saveOpenField fs = editorFieldsMultiline.field setStateEvent "Paste code here to load it." fs
-    in
-    ({emptyFieldState|string<-CodeGenerator.generateCode ges}
-    ,(\fs-> saveOpenField fs))
+   (fs
+   ,EditorEvents.Replace {node|parents<-
+               if | fs.string=="" -> []
+                  | otherwise -> newParents})
+ in
+ ({emptyFieldState|string<-(join "," node.parents)}
+ ,(\fs->
+  editorFields.field
+   makeEvent
+   (join "," node.parents)
+   fs))
+
+deleteField ges =
+ let
+  node = ges.selectedNode
+ in
+ ignoreFieldState <|
+ editorButtons.button
+  (EditorEvents.DeleteEvent node)
+  "Delete"
+
+saveOpenField ges =
+ let
+  node = ges.selectedNode
+  setStateEvent fs =
+   case CodeGenerator.parseSavedGraph fs.string of
+    Either.Left err -> (fs,EditorEvents.ParseError err)
+    Either.Right newState -> (fs,EditorEvents.SetState newState)
+  saveOpenField fs = editorFieldsMultiline.field setStateEvent "Paste code here to load it." fs
+ in
+ ({emptyFieldState|string<-CodeGenerator.generateCode ges}
+  ,(\fs-> saveOpenField fs))
+
+ignoreFieldState element = (emptyFieldState ,(\fs->element))
+emptyField = ignoreFieldState <| plainText ""
+
+editFieldBuilder
+ :  EditModes.EditMode
+ -> EditorState.EditorState
+ -> (Graphics.Input.FieldState
+    ,Graphics.Input.FieldState -> Element)
+editFieldBuilder em ges =
+ case em of
+  EditModes.Code -> codeField ges
+  EditModes.Name -> nameField ges
+  EditModes.Parents -> parentsField ges
+  EditModes.Delete -> deleteField ges
+  EditModes.Explore -> emptyField
+  EditModes.CodeView -> emptyField
+  EditModes.SaveOpen -> saveOpenField ges
 {-  EditModes.AddNode ->
    let
     addNodeEvent fs = (\en->EditorEvents.AddNode {en|name<-fs.string}) Graph.emptyNode
@@ -132,6 +144,8 @@ editField (initFS,efb) efs changed =
   WhatChanged.B -> efb efs
 
 {- Field/button initializers -}
+
+emptyFieldState = Graphics.Input.emptyFieldState
 
 editorFields = Graphics.Input.fields (Graphics.Input.emptyFieldState,EditorEvents.NoEvent)
 

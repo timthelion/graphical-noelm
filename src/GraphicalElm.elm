@@ -76,7 +76,8 @@ graphDisplay
  ~  Window.width
 
 editFieldBuilderS
- =  EditFields.editFieldBuilder
+ =  sampleOn redraw
+ <| EditFields.editFieldBuilder
  <~ editMode
  ~  graphEditorState
 
