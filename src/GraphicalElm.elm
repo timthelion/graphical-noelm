@@ -19,6 +19,9 @@ module GraphicalElm where
 import Window
 import Keyboard
 
+{- External libraries -}
+import Signal.WhatChanged as WhatChanged
+
 {- Internal modules -}
  {- Gui -}
 import Gui.MainGui as MainGui
@@ -43,7 +46,6 @@ graphEditorState
  =  EditorStateMachine.graphEditorState
  <| combine
      [editFieldEvents
-     ,editFieldMultilineEvents
      ,editButtonEvents
      ,loadSavedFieldEvents
      ,movement]
@@ -65,26 +67,32 @@ loadSavedKeyPress = KeyBindings.loadSavedKeyPress
 
 {- GUI elements -}
 
+redraw = merge ((\_->True)<~ editMode) ((\_->True)<~movement)
+
 graphDisplay
  =  GraphDisplay.graphDisplay
- <~ graphEditorState
+ <~ (sampleOn redraw graphEditorState)
  ~  editMode
  ~  Window.width
 
-editFieldS
- =  EditFields.editField
+editFieldBuilderS
+ =  EditFields.editFieldBuilder
  <~ editMode
  ~  graphEditorState
 
-editFieldEvents =
- sampleOn
-  (merge ((\_->True)<~ editMode) ((\_->True)<~movement))
-  ((.events) EditFields.editorFields)
+editFieldS
+ =  EditFields.editField
+ <~ editFieldBuilderS
+ ~  editFieldStates
+ ~  WhatChanged.whatChanged editFieldBuilderS editFieldStates
 
-editFieldMultilineEvents =
- sampleOn
-  (merge ((\_->True)<~ editMode) ((\_->True)<~movement))
-  ((.events) EditFields.editorFieldsMultiline)
+editFieldStates = EditFields.fieldStates <~ merge editFieldStateEvents editFieldMultilineStateEvents
+
+editFieldEvents = EditFields.editorFieldEvents <~ merge editFieldStateEvents editFieldMultilineStateEvents
+
+editFieldStateEvents = (.events) EditFields.editorFields
+
+editFieldMultilineStateEvents = (.events) EditFields.editorFieldsMultiline
 
 editButtonEvents = EditFields.editButtonEvents
 

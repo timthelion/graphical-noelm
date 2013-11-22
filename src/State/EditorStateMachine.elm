@@ -13,8 +13,7 @@ import State.EditorState as EditorState
 
 graphEditorState: Signal [EditorEvents.EditorEvent] -> Signal EditorState.EditorState
 graphEditorState events =
- dropRepeats
- <| foldp
+ foldp
   (\fieldEvents ges -> foldl applyEvents ges fieldEvents)
   EditorState.defaultEditorState
   events

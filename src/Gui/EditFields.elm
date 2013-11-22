@@ -10,6 +10,9 @@ import Graphics.Element
 import String
 import Either
 
+{- External libraries -}
+import Signal.WhatChanged as WhatChanged
+
 {- Internal modules -}
 import State.EditModes as EditModes
 import State.EditorEvents as EditorEvents
@@ -18,31 +21,36 @@ import LevelizedGraphs.Graph as Graph
 import ParserAndCompiler.CodeGenerator as CodeGenerator
 
 
-editField: EditModes.EditMode -> EditorState.EditorState -> Element
-editField em ges =
+editFieldBuilder: EditModes.EditMode -> EditorState.EditorState -> (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
+editFieldBuilder em ges =
  let
   node = ges.selectedNode
   emptyFieldState=Graphics.Input.emptyFieldState
+  ignoreFieldState element = (emptyFieldState ,(\fs->element))
  in
  case em of
   EditModes.Code ->
    let
+    makeEvent: Graphics.Input.FieldState -> (Graphics.Input.FieldState,EditorEvents.EditorEvent)
     makeEvent fs =
      let
       value = node.value
      in
-     EditorEvents.Replace {node|value<-{value|code<-fs.string}}
+     (fs
+     ,EditorEvents.Replace {node|value<-{value|code<-fs.string}})
     makeLangEvent lang=
      let
       value = node.value
      in
      EditorEvents.Replace {node|value<-{value|language<-lang}}
    in
+   ({emptyFieldState|string<-node.value.code}
+   ,(\fs->
    flow right
    <|(editorFields.field
          makeEvent
-         node.value.code
-         {emptyFieldState|string<-node.value.code})
+         "Enter code here."
+         fs)
    :: plainText "Language:"
    :: asText node.value.language
    :: (map
@@ -50,47 +58,54 @@ editField em ges =
         editorButtons.button
          (makeLangEvent lang)
          (show lang))
-       [Graph.ElmLang,Graph.Ikcilpazc])
+       [Graph.ElmLang,Graph.Ikcilpazc])))
   EditModes.Name ->
    let
     makeEvent fs =
-     EditorEvents.Rename {oldName=node.name,newName=fs.string}
+     (fs
+     ,EditorEvents.Rename {oldName=node.name,newName=fs.string})
    in
+   ({emptyFieldState|string<-node.name}
+   ,(\fs->
     editorFields.field
      makeEvent
      node.name
-     {emptyFieldState|string<-node.name}
+     fs))
   EditModes.Parents ->
    let
     makeEvent fs =
      let
       newParents=String.split "," fs.string
      in
-     EditorEvents.Replace {node|parents<-
+     (fs
+     ,EditorEvents.Replace {node|parents<-
                  if | fs.string=="" -> []
-                    | otherwise -> newParents}
+                    | otherwise -> newParents})
    in
+   ({emptyFieldState|string<-(join "," node.parents)}
+   ,(\fs->
     editorFields.field
      makeEvent
      (join "," node.parents)
-     {emptyFieldState|string<-(join "," node.parents)}
+     fs))
   EditModes.Delete ->
+   ignoreFieldState <|
    editorButtons.button
     (EditorEvents.DeleteEvent node)
     "Delete"
-  EditModes.Explore -> plainText ""
-  EditModes.CodeView -> plainText ""
+  EditModes.Explore -> ignoreFieldState <| plainText ""
+  EditModes.CodeView -> ignoreFieldState <| plainText ""
   EditModes.SaveOpen ->
     let
-     emptyFieldState = Graphics.Input.emptyFieldState
      setStateEvent fs =
       case CodeGenerator.parseSavedGraph fs.string of
-       Either.Left err -> EditorEvents.ParseError err
-       Either.Right newState -> EditorEvents.SetState newState
-     saveOpenField = editorFieldsMultiline.field setStateEvent "Paste code here to load it." {emptyFieldState|string<-CodeGenerator.generateCode ges}
+       Either.Left err -> (fs,EditorEvents.ParseError err)
+       Either.Right newState -> (fs,EditorEvents.SetState newState)
+     saveOpenField fs = editorFieldsMultiline.field setStateEvent "Paste code here to load it." fs
     in
-    saveOpenField
-  EditModes.AddNode ->
+    ({emptyFieldState|string<-CodeGenerator.generateCode ges}
+    ,(\fs-> saveOpenField fs))
+{-  EditModes.AddNode ->
    let
     addNodeEvent fs = (\en->EditorEvents.AddNode {en|name<-fs.string}) Graph.emptyNode
     addNodeField = editorFields.field addNodeEvent "Add node" Graphics.Input.emptyFieldState
@@ -104,13 +119,27 @@ editField em ges =
                     |> Graphics.Element.size 500 400
 
     in
-    addMiscField
+    addMiscField-}
+
+editField
+ :  (Graphics.Input.FieldState,Graphics.Input.FieldState->Element)
+ -> Graphics.Input.FieldState
+ -> WhatChanged.EventSource
+ -> Element
+editField (initFS,efb) efs changed =
+ case changed of
+  WhatChanged.A -> efb initFS
+  WhatChanged.B -> efb efs
 
 {- Field/button initializers -}
 
-editorFields = Graphics.Input.fields EditorEvents.NoEvent
+editorFields = Graphics.Input.fields (Graphics.Input.emptyFieldState,EditorEvents.NoEvent)
 
-editorFieldsMultiline = Graphics.Input.fieldsMultiline EditorEvents.NoEvent
+editorFieldsMultiline = Graphics.Input.fieldsMultiline (Graphics.Input.emptyFieldState,EditorEvents.NoEvent)
+
+fieldStates (fs,_) = fs
+
+editorFieldEvents (_,ev) = ev 
 
 editorButtons = Graphics.Input.buttons EditorEvents.NoEvent
 

@@ -28,12 +28,11 @@ displayNode mode selected node =
     | any (\np->selected.name==np) node.parents ->  toText nodeString |> Text.color blue |> monospace |> text
     | otherwise -> text <|monospace <| toText nodeString
 
-graphDisplay =
- (\ges em width ->
+graphDisplay ges em width =
    flow down
     <| intersperse (Gui.Helpers.horizontalLine width)
     <| map (flow right)
     <| map (\level->
         intersperse Gui.Helpers.verticalLine
         <| map (displayNode em ges.selectedNode) level)
-    <| ges.levelizedGraph)
+    <| ges.levelizedGraph
