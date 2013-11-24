@@ -9,30 +9,40 @@ import LevelizedGraphs.Graph as Graph
 import LevelizedGraphs.Coordinates as Coordinates
 import State.EditorEvents as EditorEvents
 import State.EditorState as EditorState
+import State.EventRegisters as EventRegisters
 
 
-graphEditorState: Signal [EditorEvents.EditorEvent] -> Signal EditorState.EditorState
-graphEditorState events =
+graphEditorState: Signal EditorEvents.EditorEvent -> Signal EditorState.EditorState
+graphEditorState event =
  foldp
-  (\fieldEvents ges -> foldl applyEvents ges fieldEvents)
+  applyEvent
   EditorState.defaultEditorState
-  events
+  event
 
-applyEvents fieldEvent ges =
+applyEvent fieldEvent ges =
    case fieldEvent of
     EditorEvents.NoEvent          -> ges
-
     EditorEvents.Arrows arrs      -> updateLocation arrs ges
-
-    EditorEvents.Replace node     -> restoreCoordinates ges (\ges->{ges|graph <- Graph.replaceNode node ges.graph}) |> updateGraphLevelization
-    EditorEvents.AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- Graph.addNode node ges.graph}) |> updateGraphLevelization
-    EditorEvents.SetMisc misc     -> restoreCoordinates ges (\ges->{ges|misc <- misc})
-    EditorEvents.DeleteEvent node -> restoreCoordinates ges (\ges->{ges|graph <- Graph.deleteNode node.name ges.graph}) |> updateGraphLevelization
-    EditorEvents.Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- Graph.renameNode rename.oldName rename.newName ges.graph}) |> updateGraphLevelization
-
+    EditorEvents.Replace node     ->
+     restoreCoordinates ges (\ges->{ges|graph <- Graph.replaceNode node ges.graph})
+     |> updateGraphLevelization
+    EditorEvents.SetMisc misc     -> {ges|misc <- misc}
+    EditorEvents.DeleteEvent node ->
+     restoreCoordinates ges (\ges->{ges|graph <- Graph.deleteNode node.name ges.graph})
+     |> updateGraphLevelization
     EditorEvents.SetState ges  -> ges |> updateGraphLevelization
     EditorEvents.ParseError err   -> {ges|errors<-err}
-    
+    EditorEvents.SetEventRegister registeredEvent -> {ges|eventRegister<-registeredEvent}
+    EditorEvents.ApplyEventRegister ->
+      (\ges'->applyRegisteredEvent ges.eventRegister ges')
+      {ges|eventRegister<-EventRegisters.NoEvent}
+      |> (\ges'->{ges'|errors<-"Applying registered event: "++show ges.eventRegister})
+
+applyRegisteredEvent registeredEvent ges =
+ case registeredEvent of
+    EventRegisters.AddNode node     -> restoreCoordinates ges (\ges->{ges|graph <- Graph.addNode node ges.graph}) |> updateGraphLevelization
+    EventRegisters.Rename rename    -> restoreCoordinates ges (\ges->{ges|graph <- Graph.renameNode rename.oldName rename.newName ges.graph}) |> updateGraphLevelization
+    EventRegisters.NoEvent -> ges
 
 {- Cursor movement -}
 

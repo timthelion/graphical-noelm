@@ -17,28 +17,36 @@ import Keyboard
 import Keyboard.Keys
 
 {- Internal modules -}
-import State.EditorEvents
+import State.EditorEvents as EditorEvents
+import State.EditModes as EditModes
+import State.EventRegisters as EventRegisters
 
 {- "Arrow keys" -}
-ctrlArrows =
- (\arrs->State.EditorEvents.Arrows {arrs|y<- -arrs.y}) <~
-  keepWhen
+ctrlArrows
+ = (\arrs->EditorEvents.Arrows {arrs|y<- -arrs.y}) <~ (onlyMovement
+ (keepWhen
    Keyboard.ctrl
    {x=0,y=0}
-   Keyboard.arrows
+   Keyboard.arrows))
 
-hjklMovement moveMode =
- (\arrs -> State.EditorEvents.Arrows {arrs|y<- -arrs.y}) <~
-  keepWhen
+hjklMovement moveMode
+ = (\arrs -> EditorEvents.Arrows {arrs|y<- -arrs.y}) <~ onlyMovement
+ (keepWhen
    moveMode
    {x=0,y=0}
-   (Keyboard.Keys.directionKeys Keyboard.Keys.k Keyboard.Keys.j Keyboard.Keys.h Keyboard.Keys.l)
+   (Keyboard.Keys.directionKeys Keyboard.Keys.k Keyboard.Keys.j Keyboard.Keys.h Keyboard.Keys.l))
+
+onlyMovement: Signal {x:number,y:number} -> Signal {x:number,y:number}
+onlyMovement dirs = keepIf (\dirs-> dirs.x /= 0 || dirs.y /= 0) {x=0,y=0} dirs
 
 {- Form submition -}
 
 applyKeyPress
- =  keepWhen (not <~ Keyboard.Keys.isKeyDown Keyboard.Keys.shift) True
+ em
+ = (\_->EditorEvents.ApplyEventRegister)
+ <~ (keepWhen (not <~ Keyboard.Keys.isKeyDown Keyboard.Keys.shift) True
+ <| keepWhen ((\em->EventRegisters.isModeWhichRegistersEvents em) <~ em) False
  <| keepIf id False
- <| Keyboard.Keys.isKeyDown Keyboard.Keys.enter
-
-loadSavedKeyPress = keepIf id False <| Keyboard.Keys.isKeyDown Keyboard.Keys.f2
+ <| merge
+     (Keyboard.Keys.isKeyDown Keyboard.Keys.enter)
+     (Keyboard.Keys.isKeyDown Keyboard.Keys.escape))

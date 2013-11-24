@@ -4,7 +4,7 @@ import Gui.Helpers
 import Gui.EditModeHelp as EditModeHelp
 import State.EditModes as EditModes
 
-gui width gd em ges lsf editField = flow down
+gui width gd em ges editField editorEvents = flow down
   [gd
   ,Gui.Helpers.coloredHorizontalLine width black
   ,Gui.Helpers.horizontalLine width
@@ -23,4 +23,6 @@ gui width gd em ges lsf editField = flow down
   ,toText "The source can be found here." |> Text.link "https://github.com/timthelion/graphical-elm" |> Text.color blue |> underline |> text
   ,Gui.Helpers.horizontalLine width
   ,Gui.Helpers.horizontalLine width
-  ,Gui.Helpers.horizontalLine width]
+  ,Gui.Helpers.horizontalLine width
+  ,asText editorEvents
+  ]

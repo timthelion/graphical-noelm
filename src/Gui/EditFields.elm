@@ -17,8 +17,27 @@ import Signal.WhatChanged as WhatChanged
 import State.EditModes as EditModes
 import State.EditorEvents as EditorEvents
 import State.EditorState as EditorState
+import State.EventRegisters as EventRegisters
 import LevelizedGraphs.Graph as Graph
 import ParserAndCompiler.CodeGenerator as CodeGenerator
+
+
+editFieldBuilder
+ :  EditModes.EditMode
+ -> EditorState.EditorState
+ -> (Graphics.Input.FieldState
+    ,Graphics.Input.FieldState -> Element)
+editFieldBuilder em ges =
+ case em of
+  EditModes.Code -> codeField ges
+  EditModes.Name -> nameField ges
+  EditModes.Parents -> parentsField ges
+  EditModes.Delete -> deleteField ges
+  EditModes.Explore -> emptyField
+  EditModes.CodeView -> emptyField
+  EditModes.SaveOpen -> saveOpenField ges
+  EditModes.AddNode -> addNodeField ges
+  EditModes.Misc -> miscField ges
 
 codeField: EditorState.EditorState ->  (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
 codeField ges =
@@ -51,7 +70,7 @@ nameField ges =
  let
   node = ges.selectedNode
   makeEvent fs =
-   (fs,EditorEvents.Rename {oldName=node.name,newName=fs.string})
+   (fs,EditorEvents.SetEventRegister <| EventRegisters.Rename {oldName=node.name,newName=fs.string})
  in
   ({emptyFieldState|string<-node.name}
   ,(\fs->
@@ -100,38 +119,32 @@ saveOpenField ges =
  ({emptyFieldState|string<-CodeGenerator.generateCode ges}
   ,(\fs-> saveOpenField fs))
 
+addNodeField ges =
+   let
+    addNodeEvent fs = (fs,EditorEvents.SetEventRegister <| (\en->EventRegisters.AddNode {en|name<-fs.string}) Graph.emptyNode)
+    addNodeField fs = editorFields.field addNodeEvent "Add node" fs
+   in
+   (Graphics.Input.emptyFieldState
+   ,(\fs->
+   flow right [addNodeField fs, plainText "Press enter to add"]))
+
+miscField ges =
+ let 
+  emptyFieldState = Graphics.Input.emptyFieldState
+  setMiscEvent fs = (fs,EditorEvents.SetMisc fs.string)
+ in
+ ({emptyFieldState|string<-ges.misc}
+ ,(\fs->
+ editorFieldsMultiline.field
+  setMiscEvent
+  "Add misc(imports, type declarations, ect.)"
+  fs
+ |> Graphics.Element.size 500 400))
+
+{------------------------------------------}
+
 ignoreFieldState element = (emptyFieldState ,(\fs->element))
 emptyField = ignoreFieldState <| plainText ""
-
-editFieldBuilder
- :  EditModes.EditMode
- -> EditorState.EditorState
- -> (Graphics.Input.FieldState
-    ,Graphics.Input.FieldState -> Element)
-editFieldBuilder em ges =
- case em of
-  EditModes.Code -> codeField ges
-  EditModes.Name -> nameField ges
-  EditModes.Parents -> parentsField ges
-  EditModes.Delete -> deleteField ges
-  EditModes.Explore -> emptyField
-  EditModes.CodeView -> emptyField
-  EditModes.SaveOpen -> saveOpenField ges
-{-  EditModes.AddNode ->
-   let
-    addNodeEvent fs = (\en->EditorEvents.AddNode {en|name<-fs.string}) Graph.emptyNode
-    addNodeField = editorFields.field addNodeEvent "Add node" Graphics.Input.emptyFieldState
-   in
-   flow right [addNodeField, plainText "Press enter to add"]
-  EditModes.Misc ->
-    let 
-     emptyFieldState = Graphics.Input.emptyFieldState
-     setMiscEvent fs = EditorEvents.SetMisc fs.string
-     addMiscField = editorFieldsMultiline.field setMiscEvent "Add misc(imports, type declarations, ect.)" {emptyFieldState|string<-ges.misc}
-                    |> Graphics.Element.size 500 400
-
-    in
-    addMiscField-}
 
 editField
  :  (Graphics.Input.FieldState,Graphics.Input.FieldState->Element)

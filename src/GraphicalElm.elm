@@ -30,7 +30,6 @@ import Gui.Helpers
 import Gui.GraphDisplay as GraphDisplay
 import Gui.EditFields as EditFields
 import Gui.KeyBindings as KeyBindings
-import Gui.LoadSaved as LoadSaved
  {- LevelizedGraphs -}
 import LevelizedGraphs.Graph as Graph
  {- ParserAndCompiler -}
@@ -43,12 +42,13 @@ import State.EditModes as EditModes
 
 {- The main program state -}
 graphEditorState
- =  EditorStateMachine.graphEditorState
- <| combine
+ =  EditorStateMachine.graphEditorState editorEvents
+
+editorEvents = merges
      [editFieldEvents
      ,editButtonEvents
-     ,loadSavedFieldEvents
-     ,movement]
+     ,movement
+     ,applyKeyPress]
 
 editMode = EditModes.editMode Keyboard.lastPressed
 
@@ -62,12 +62,11 @@ movement = merge ctrlArrows hjklMovement
 
  {- Other key bindings -}
 
-applyKeyPress = KeyBindings.applyKeyPress
-loadSavedKeyPress = KeyBindings.loadSavedKeyPress
+applyKeyPress = KeyBindings.applyKeyPress editMode
 
 {- GUI elements -}
 
-redraw = merge ((\_->True)<~ editMode) ((\_->True)<~movement)
+redraw = merges [((\_->True)<~ editMode),((\_->True)<~movement),((\_->True)<~applyKeyPress)]
 
 graphDisplay
  =  GraphDisplay.graphDisplay
@@ -97,20 +96,14 @@ editFieldMultilineStateEvents = (.events) EditFields.editorFieldsMultiline
 
 editButtonEvents = EditFields.editButtonEvents
 
-loadSavedField
- =  LoadSaved.loadSavedField
- <~ loadSavedKeyPress
-
-loadSavedFieldEvents = LoadSaved.loadSavedFieldEvents loadSavedKeyPress
-
 gui
  =  MainGui.gui
  <~ Window.width
  ~  graphDisplay
  ~  editMode
  ~  graphEditorState
- ~  loadSavedField
  ~  editFieldS
+ ~  editorEvents
 
 main = gui
 
