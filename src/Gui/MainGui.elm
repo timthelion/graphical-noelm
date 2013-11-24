@@ -24,5 +24,5 @@ gui width gd em ges editField editorEvents = flow down
   ,Gui.Helpers.horizontalLine width
   ,Gui.Helpers.horizontalLine width
   ,Gui.Helpers.horizontalLine width
-  ,asText editorEvents
+--  ,asText editorEvents
   ]
