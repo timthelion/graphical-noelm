@@ -44,8 +44,14 @@ onlyMovement dirs = keepIf (\dirs-> dirs.x /= 0 || dirs.y /= 0) {x=0,y=0} dirs
 applyKeyPress
  em
  = (\_->EditorEvents.ApplyEventRegister)
- <~ (keepWhen ((\em->EventRegisters.isModeWhichRegistersEvents em) <~ em) False
- <| keepIf id False
- <| merge
-     (Keyboard.Keys.isKeyDown Keyboard.Keys.enter)
-     (Keyboard.Keys.isKeyDown Keyboard.Keys.escape))
+ <~
+ merge
+  (onKeyDown <| Keyboard.Keys.isKeyDown Keyboard.Keys.escape)
+  (enterInEventRegisteringMode em)
+
+enterInEventRegisteringMode
+ em
+ = keepWhen ((\em->EventRegisters.isModeWhichRegistersEvents em) <~ em) False
+ <| onKeyDown <| Keyboard.Keys.isKeyDown Keyboard.Keys.enter
+
+onKeyDown keyState = keepIf id False keyState
