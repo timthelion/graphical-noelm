@@ -36,7 +36,6 @@ applyEvent fieldEvent ges =
     EditorEvents.ApplyEventRegister ->
       (\ges'->applyRegisteredEvent ges.eventRegister ges')
       {ges|eventRegister<-EventRegisters.NoEvent}
-      |> (\ges'->{ges'|errors<-"Applying registered event: "++show ges.eventRegister})
 
 applyRegisteredEvent registeredEvent ges =
  case registeredEvent of
