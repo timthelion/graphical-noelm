@@ -17,8 +17,8 @@ import List
 {- data types -}
 type Graph = [Node]
 
-data Language = LiftElm | Elm | Ikcilpazc
-languages = [LiftElm,Elm,Ikcilpazc]
+data Language = LiftElm | ElmLang | Ikcilpazc
+languages = [LiftElm,ElmLang,Ikcilpazc]
 
 type Value = 
  {language: Language

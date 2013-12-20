@@ -63,7 +63,7 @@ parseSavedNode raw =
    let
     languageString = head <| String.split "_base_code_" raw'
     language =
-     if | languageString == "ElmLang" -> Graph.Elm
+     if | languageString == "ElmLang" -> Graph.ElmLang
         | languageString == "Ikcilpazc" -> Graph.Ikcilpazc
     code = inQuotes codeQuoteOpen codeQuoteClose raw'
     parents' =
