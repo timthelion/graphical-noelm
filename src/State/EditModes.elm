@@ -22,6 +22,7 @@ type ModeInfo =
 
 editModes: [ModeInfo]
 editModes =
+ {- movement modes -}
  [{mode = Explore
   ,navigationMode = Move
   ,keyBindings = [Keyboard.Keys.escape]
@@ -32,6 +33,7 @@ editModes =
   ,keyBindings = [Keyboard.Keys.e]
   ,docs = "View the code of each node in the graph view rather than it's name."}
 
+ {- insert modes -}
  ,{mode = Code
   ,navigationMode = Insert
   ,keyBindings = [Keyboard.Keys.i
