@@ -39,7 +39,7 @@ copyright (c) 2013 Timothy Hobbs
 Released under the terms of the GNU AGPL v 3 or later.
 See more licence information at the end of the file, and or in the file COPYING.
 -}
-module ParserAndCompiler.Ikcilpazc where
+module ParserAndCompiler.Compiler.Ikcilpazc where
 {- Standard library imports -}
 import String
 import open Either

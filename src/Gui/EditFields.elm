@@ -19,8 +19,8 @@ import State.EditorEvents as EditorEvents
 import State.EditorState as EditorState
 import State.EventRegisters as EventRegisters
 import LevelizedGraphs.Graph as Graph
-import ParserAndCompiler.CodeGenerator as CodeGenerator
-
+import ParserAndCompiler.Compiler as Compiler
+import ParserAndCompiler.Parser as Parser
 
 editFieldBuilder
  :  EditModes.EditMode
@@ -64,7 +64,7 @@ codeField ges =
         editorButtons.button
          (makeLangEvent lang)
          (show lang))
-       [Graph.ElmLang,Graph.Ikcilpazc])))
+       Graph.languages)))
 
 nameField ges =
  let
@@ -111,12 +111,12 @@ saveOpenField ges =
  let
   node = ges.selectedNode
   setStateEvent fs =
-   case CodeGenerator.parseSavedGraph fs.string of
+   case Parser.parseSavedGraph fs.string of
     Either.Left err -> (fs,EditorEvents.ParseError err)
     Either.Right newState -> (fs,EditorEvents.SetState newState)
   saveOpenField fs = editorFieldsMultiline.field setStateEvent "Paste code here to load it." fs
  in
- ({emptyFieldState|string<-CodeGenerator.generateCode ges}
+ ({emptyFieldState|string<-Compiler.generateCode ges}
   ,(\fs-> saveOpenField fs))
 
 addNodeField ges =

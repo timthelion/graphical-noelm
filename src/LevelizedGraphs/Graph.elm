@@ -17,11 +17,13 @@ import List
 {- data types -}
 type Graph = [Node]
 
-data Language = ElmLang | Ikcilpazc
+data Language = LiftElm | Elm | Ikcilpazc
+languages = [LiftElm,Elm,Ikcilpazc]
 
 type Value = 
- {code: String
- ,language: Language}
+ {language: Language
+ ,ntype: Maybe String
+ ,code: String}
 
 type Node =
  {parents: [String]
@@ -39,8 +41,9 @@ emptyNode =
  ,value   = defaultValue}
 
 defaultValue =
- {code = ""
- ,language = ElmLang}
+ {language = LiftElm
+ ,ntype = Nothing
+ ,code = ""}
 
 data Ord = Gt | Lt | Eq
 

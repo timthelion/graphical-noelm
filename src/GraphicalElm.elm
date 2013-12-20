@@ -32,8 +32,6 @@ import Gui.EditFields as EditFields
 import Gui.KeyBindings as KeyBindings
  {- LevelizedGraphs -}
 import LevelizedGraphs.Graph as Graph
- {- ParserAndCompiler -}
-import ParserAndCompiler.CodeGenerator as CodeGenerator
  {- State -}
 import State.EditorState as EditorState
 import State.EditorEvents as EditorEvents
