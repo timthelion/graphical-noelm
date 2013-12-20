@@ -13,6 +13,10 @@ displayNode: EditModes.EditMode -> Graph.Node -> Graph.Node -> Element
 displayNode mode selected node =
  let nodeString = case mode of
        EditModes.CodeView -> node.value.code
+       EditModes.TypeView ->
+        case node.value.ntype of
+         Just ntype -> ntype
+         Nothing -> ""
        _ -> node.name
  in
  if | node.name==selected.name ->

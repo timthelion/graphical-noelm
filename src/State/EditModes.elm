@@ -10,7 +10,7 @@ module State.EditModes where
 import Keyboard
 import Keyboard.Keys
 
-data EditMode = Code | Name | Parents | Delete | Explore | SaveOpen | CodeView | AddNode | Misc
+data EditMode = Code | Name | Parents | Delete | Explore | SaveOpen | CodeView | AddNode | Misc | Type | TypeView
 
 data NavigationMode = Move | Insert
 
@@ -33,6 +33,11 @@ editModes =
   ,keyBindings = [Keyboard.Keys.e]
   ,docs = "View the code of each node in the graph view rather than it's name."}
 
+ ,{mode = TypeView
+  ,navigationMode = Move
+  ,keyBindings = [Keyboard.Keys.r]
+  ,docs = "View each node's type rather than name in the main view."}
+
  {- insert modes -}
  ,{mode = Code
   ,navigationMode = Insert
@@ -49,6 +54,11 @@ editModes =
   ,navigationMode = Insert
   ,keyBindings = [Keyboard.Keys.p]
   ,docs = "Set what other nodes this node depends upon."}
+
+ ,{mode = Type
+  ,navigationMode = Insert
+  ,keyBindings = [Keyboard.Keys.t]
+  ,docs = "Set the node's type."}
 
  ,{mode = Delete
   ,navigationMode = Insert

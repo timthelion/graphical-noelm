@@ -38,6 +38,8 @@ editFieldBuilder em ges =
   EditModes.SaveOpen -> saveOpenField ges
   EditModes.AddNode -> addNodeField ges
   EditModes.Misc -> miscField ges
+  EditModes.TypeView -> emptyField
+  EditModes.Type -> typeField ges
 
 codeField: EditorState.EditorState ->  (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
 codeField ges =
@@ -140,6 +142,25 @@ miscField ges =
   "Add misc(imports, type declarations, ect.)"
   fs
  |> Graphics.Element.size 500 400))
+
+typeField ges =
+ let
+  node = ges.selectedNode
+  value = node.value
+  currentType =
+   case node.value.ntype of
+    Just ntype -> ntype
+    Nothing -> ""
+  newType fs = String.trim fs.string
+  makeEvent fs =
+   (fs
+   ,EditorEvents.Replace
+     {node|value <-{value|ntype<-
+       if | newType fs == "" -> Nothing
+          | otherwise -> Just <| newType fs}})
+ in
+ ({emptyFieldState|string<-currentType}
+ ,\fs->editorFields.field makeEvent currentType fs)
 
 {------------------------------------------}
 
