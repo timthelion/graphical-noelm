@@ -35,7 +35,7 @@ generateNodeCode node =
  let
   generatedCodeEither =
    case node.value.language of
-    Graph.LiftElm -> Either.Right (node.value.code++(String.concat <| intersperse "~" node.parents))
+    Graph.LiftElm -> Either.Right (node.value.code++" "++(String.concat <| intersperse "~" node.parents))
     Graph.ElmLang -> Either.Right node.value.code
     Graph.Ikcilpazc -> Ikcilpazc.gen node
   ntype =
