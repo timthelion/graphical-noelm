@@ -26,7 +26,7 @@ editFieldBuilder
  :  EditModes.EditMode
  -> EditorState.EditorState
  -> (Graphics.Input.FieldState
-    ,Graphics.Input.FieldState -> EditorState.EditorState -> Element)
+    ,Graphics.Input.FieldState -> Element)
 editFieldBuilder em =
  case em of
   {- move modes -}
@@ -47,7 +47,7 @@ editFieldBuilder em =
   EditModes.Misc -> miscField
 
 
-codeField: EditorState.EditorState ->  (Graphics.Input.FieldState, Graphics.Input.FieldState -> EditorState.EditorState -> Element)
+codeField: EditorState.EditorState ->  (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
 codeField ges =
  let
   node = ges.selectedNode
@@ -59,14 +59,14 @@ codeField ges =
    EditorEvents.Replace {node|value<-{value|language<-lang}}
  in
   ({emptyFieldState|string<-node.value.code}
-  ,(\fs ges' ->
+  ,(\fs->
    flow right
    <|(editorFields.field
          makeEvent
          "Enter code here."
          fs)
    :: plainText "Language:"
-   :: asText ges'.selectedNode.value.language
+   :: asText node.value.language
    :: (map
        (\lang ->
         editorButtons.button
@@ -81,7 +81,7 @@ nameField ges =
    (fs,EditorEvents.SetEventRegister <| EventRegisters.Rename {oldName=node.name,newName=fs.string})
  in
   ({emptyFieldState|string<-node.name}
-  ,(\fs ges' ->
+  ,(\fs->
     editorFields.field
      makeEvent
      node.name
@@ -100,7 +100,7 @@ parentsField ges =
                   | otherwise -> newParents})
  in
  ({emptyFieldState|string<-(join "," node.parents)}
- ,(\fs ges' ->
+ ,(\fs->
   editorFields.field
    makeEvent
    (join "," node.parents)
@@ -110,7 +110,7 @@ deleteField ges =
  let
   node = ges.selectedNode
  in
- ignoreStateUpdates <|
+ ignoreFieldState <|
  editorButtons.button
   (EditorEvents.DeleteEvent node)
   "Delete"
@@ -125,7 +125,7 @@ saveOpenField ges =
   saveOpenField fs = editorFieldsMultiline.field setStateEvent "Paste code here to load it." fs
  in
  ({emptyFieldState|string<-Compiler.generateCode ges}
-  ,(\fs ges' -> saveOpenField fs))
+  ,(\fs-> saveOpenField fs))
 
 addNodeField ges =
    let
@@ -133,7 +133,7 @@ addNodeField ges =
     addNodeField fs = editorFields.field addNodeEvent "Add node" fs
    in
    (Graphics.Input.emptyFieldState
-   ,(\fs ges' ->
+   ,(\fs->
    flow right [addNodeField fs, plainText "Press enter to add"]))
 
 miscField ges =
@@ -142,7 +142,7 @@ miscField ges =
   setMiscEvent fs = (fs,EditorEvents.SetMisc fs.string)
  in
  ({emptyFieldState|string<-ges.misc}
- ,(\fs ges' ->
+ ,(\fs->
  editorFieldsMultiline.field
   setMiscEvent
   "Add misc(imports, type declarations, ect.)"
@@ -166,13 +166,13 @@ typeField ges =
           | otherwise -> Just <| newType fs}})
  in
  ({emptyFieldState|string<-currentType}
- ,\fs ges' ->editorFields.field makeEvent currentType fs)
+ ,\fs->editorFields.field makeEvent currentType fs)
 
 {------------------------------------------}
 
-ignoreStateUpdates element = (emptyFieldState ,(\fs ges'->element))
-emptyField ges =  ignoreStateUpdates <| plainText ""
-infoField ges = ignoreStateUpdates <|
+ignoreFieldState element = (emptyFieldState ,(\fs->element))
+emptyField ges =  ignoreFieldState <| plainText ""
+infoField ges = ignoreFieldState <|
  flow down
   [flow right [plainText "Name:",plainText ges.selectedNode.name]
   ,flow right [plainText "Parents:",plainText <| String.concat <| intersperse "," ges.selectedNode.parents]
@@ -183,19 +183,15 @@ infoField ges = ignoreStateUpdates <|
   ,flow right [plainText "Code:",plainText ges.selectedNode.value.code]
   ,flow right [plainText "Language:",plainText <| show ges.selectedNode.value.language]]
 
-type FieldAndEditorStateUpdate =
- {fieldState: Graphics.Input.FieldState
- ,editorState: EditorState.EditorState}
-
 editField
- :  (Graphics.Input.FieldState,Graphics.Input.FieldState-> EditorState.EditorState->Element)
- -> FieldAndEditorStateUpdate
+ :  (Graphics.Input.FieldState,Graphics.Input.FieldState->Element)
+ -> Graphics.Input.FieldState
  -> WhatChanged.EventSource
  -> Element
-editField (initFS,efb) updates changed =
+editField (initFS,efb) efs changed =
  case changed of
-  WhatChanged.A -> efb initFS updates.editorState
-  WhatChanged.B -> efb updates.fieldState updates.editorState
+  WhatChanged.A -> efb initFS
+  WhatChanged.B -> efb efs
 
 {- Field/button initializers -}
 
