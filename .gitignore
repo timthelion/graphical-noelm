@@ -4,3 +4,8 @@ cache
 *#
 .#*
 *~
+elm_dependencies
+Keyboard
+Lazzy.elm
+Parsers
+*.bk
