@@ -15,7 +15,7 @@ data EditMode = Code | Name | Parents | Delete | Explore | SaveOpen | CodeView |
 data NavigationMode = Move | Insert
 
 type ModeInfo =
- {keyBindings: [Keyboard.Keys.Key]
+ {keyBindings: [Keyboard.Keys.Key] -- Note: this is fore listing alternates rather than pairing modifiers...
  ,mode: EditMode
  ,navigationMode: NavigationMode
  ,docs: String}
