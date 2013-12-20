@@ -56,5 +56,5 @@ parentsMarkerEater =
 parentEater: LexemeEater Char Char String
 parentEater
  =  LE.convertOutput String.fromList
- <| LE.charset (\c->not (c==','||CharacterClassification.isWhitespace c))
+ <| LE.charset (\c->not (c==','||c=='-'))
 

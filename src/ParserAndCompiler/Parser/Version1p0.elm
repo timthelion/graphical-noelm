@@ -61,6 +61,13 @@ main=(\analogClockFace digitalClockFace -> (\acf dcf->flow down [acf,dcf])<~anal
 takeNode: ContinuationParser (PM.PositionMarked Char) Graph.Node () ES.EditorState
 takeNode continuation =
  t.take nodeNameEater <| \ nodeName _ ->
+ (takeNode' nodeName)
+  `PM.markEndOfInputAsErrorAt`
+ ("Error in node named:"++nodeName++" End of input, did not finish parsing.")
+ <| continuation
+
+takeNode': String -> ContinuationParser (PM.PositionMarked Char) Graph.Node () ES.EditorState
+takeNode' nodeName continuation =
  t.take Lexemes.whitespace <| \ _ transition ->
   if | transition == ':' ->
        fastforward 1 <|
@@ -72,14 +79,15 @@ takeNode continuation =
      | otherwise ->
        takeNodeCode nodeName Nothing transition continuation
 
-
 takeNodeCode: String -> Maybe String -> Char -> ContinuationParser (PM.PositionMarked Char) Graph.Node () ES.EditorState
 takeNodeCode nodeName ntype transition continuation input =
  (\allIsGood-> if allIsGood
  then
   t.take compiledPartEater (\ _ _ ->
   t.take languageEater <| \ language _ ->
-  takeBaseCode <| \ baseCode _ ->
+  takeBaseCode
+   `PM.markEndOfInputAsErrorAt` "Close quote not found in code block."
+  <| \ baseCode _ ->
   takeParents <| \ parents _ ->
   continuation {parents=parents
                ,name=nodeName
@@ -94,16 +102,28 @@ takeBaseCode continuation =
  t.take baseCodeMarkerEater <| \ _ _ ->
  t.take baseCodeEater continuation
 
-takeParents: ContinuationParser (PM.PositionMarked Char) [String] () ES.EditorState
+takeParents: ContinuationParser (PM.PositionMarked Char) [String] Char ES.EditorState
 takeParents continuation =
  t.take parentsMarkerEater <| \ _ _ ->
  takeParents' [] continuation
 
-takeParents': [String] -> ContinuationParser (PM.PositionMarked Char) [String] () ES.EditorState
+takeParents': [String] -> ContinuationParser (PM.PositionMarked Char) [String] Char ES.EditorState
 takeParents' acc continuation =
  t.take parentEater <| \ parent transition ->
- fastforward 1 <|
- takeParents' (acc++[parent]) continuation
+ if | transition == ',' ->
+       fastforward 1 <|
+       takeParents' (acc++[String.trim parent]) continuation
+    | transition == '-' ->
+       lookAhead 2 <| \ future' _ ->
+       (\cont->map .char future' |> cont) <| \ future -> 
+       if | future == ['-','}'] ->
+            fastforward 2 <|
+            if | String.trim parent == "" ->
+                  continuation (acc) '}'
+               | otherwise ->
+                  continuation (acc++[parent]) '}'
+          | otherwise ->
+            PM.parseErrorAts <| "Unexpected input:" ++ show future
 
 {-
 Graphical ELM - A program for editing graphs as graphs.
