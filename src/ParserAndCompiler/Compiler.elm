@@ -26,6 +26,7 @@ generateCode ges
       Constants.startMisc ++ "\n" ++
       ges.misc ++ "\n" ++
       Constants.endMisc ++ "\n" ++
+      Constants.mainRealiase ++ "\n"++
       (concat <| nodeCodes)
     | otherwise -> concat <| errors
 

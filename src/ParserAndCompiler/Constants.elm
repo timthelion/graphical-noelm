@@ -12,6 +12,9 @@ makeHeader v = headerPrefix ++ Types.showVersion v ++ headerPostfix
 startMisc       = "{-START MISC-}"
 endMisc         = "{-END MISC-}"
 
+{- main function realiasing -}
+mainRealiase = "main = main"++nameObfuscator
+
 {- nodes -}
 nameObfuscator  = "PrivateDon'tUse"
 

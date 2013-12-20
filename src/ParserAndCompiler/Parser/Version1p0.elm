@@ -26,6 +26,8 @@ parseSavedGraph =
   defaultEditorState = ES.defaultEditorState
  in
  takeMisc <| \ misc _ ->
+ t.take Lexemes.whitespace <| \ _ _ ->
+ t.take (LE.exactMatch <| String.toList Constants.mainRealiase) <| \ _ _ ->
  takeGraph <| \ graph _ ->
  return <| Parsed
             {defaultEditorState|
