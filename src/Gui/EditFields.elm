@@ -27,19 +27,25 @@ editFieldBuilder
  -> EditorState.EditorState
  -> (Graphics.Input.FieldState
     ,Graphics.Input.FieldState -> Element)
-editFieldBuilder em ges =
+editFieldBuilder em =
  case em of
-  EditModes.Code -> codeField ges
-  EditModes.Name -> nameField ges
-  EditModes.Parents -> parentsField ges
-  EditModes.Delete -> deleteField ges
+  {- move modes -}
   EditModes.Explore -> emptyField
-  EditModes.CodeView -> emptyField
-  EditModes.SaveOpen -> saveOpenField ges
-  EditModes.AddNode -> addNodeField ges
-  EditModes.Misc -> miscField ges
-  EditModes.TypeView -> emptyField
-  EditModes.Type -> typeField ges
+  EditModes.CodeView -> infoField
+  EditModes.TypeView -> infoField
+
+  {- insert modes -}
+   {- node editing -}
+  EditModes.Name -> nameField
+  EditModes.Parents -> parentsField
+  EditModes.Type -> typeField
+  EditModes.Code -> codeField
+  EditModes.Delete -> deleteField
+   {- global editing -}
+  EditModes.SaveOpen -> saveOpenField
+  EditModes.AddNode -> addNodeField
+  EditModes.Misc -> miscField
+
 
 codeField: EditorState.EditorState ->  (Graphics.Input.FieldState, Graphics.Input.FieldState -> Element)
 codeField ges =
@@ -165,7 +171,17 @@ typeField ges =
 {------------------------------------------}
 
 ignoreFieldState element = (emptyFieldState ,(\fs->element))
-emptyField = ignoreFieldState <| plainText ""
+emptyField ges =  ignoreFieldState <| plainText ""
+infoField ges = ignoreFieldState <|
+ flow down
+  [flow right [plainText "Name:",plainText ges.selectedNode.name]
+  ,flow right [plainText "Parents:",plainText <| String.concat <| intersperse "," ges.selectedNode.parents]
+  ,flow right [plainText "Type:",plainText
+   <| case ges.selectedNode.value.ntype of
+       Just ntype -> ntype
+       Nothing -> "No type entered"]
+  ,flow right [plainText "Code:",plainText ges.selectedNode.value.code]
+  ,flow right [plainText "Language:",plainText <| show ges.selectedNode.value.language]]
 
 editField
  :  (Graphics.Input.FieldState,Graphics.Input.FieldState->Element)
