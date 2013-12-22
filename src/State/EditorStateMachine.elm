@@ -24,12 +24,14 @@ applyEvent fieldEvent ges =
     EditorEvents.NoEvent          -> ges
     EditorEvents.Arrows arrs      -> updateLocation arrs ges
     EditorEvents.Replace node     ->
-     restoreCoordinates ges (\ges->{ges|graph <- Graph.replaceNode node ges.graph})
-     |> updateGraphLevelization
+     restoreCoordinates ges
+       (\ges->{ges|graph <- Graph.replaceNode node ges.graph}
+              |> updateGraphLevelization)
     EditorEvents.SetMisc misc     -> {ges|misc <- misc}
     EditorEvents.DeleteEvent node ->
-     restoreCoordinates ges (\ges->{ges|graph <- Graph.deleteNode node.name ges.graph})
-     |> updateGraphLevelization
+     restoreCoordinates ges
+      (\ges->{ges|graph <- Graph.deleteNode node.name ges.graph}
+             |> updateGraphLevelization)
     EditorEvents.SetState ges  -> ges |> updateGraphLevelization
     EditorEvents.ParseError err   -> {ges|errors<-err}
     EditorEvents.SetEventRegister registeredEvent -> {ges|eventRegister<-registeredEvent}
